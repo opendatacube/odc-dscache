@@ -4,9 +4,8 @@ Tools for dealing with datacube db
 import random
 from typing import Any, Dict, Optional
 
-import psycopg2
-
 import datacube.utils.geometry as geom
+import psycopg2
 from datacube import Datacube
 from datacube.api.grid_workflow import Tile
 from datacube.config import LocalConfig
@@ -133,10 +132,10 @@ where archived is null
 and dataset_type_ref = (select id from agdc.dataset_type where name = %(product)s)
 {limit};
 """.format(
-        limit="LIMIT {:d}".format(limit) if limit else ""
+        limit=f"LIMIT {limit:d}" if limit else ""
     )
 
-    cur = db.cursor(name="c{:04X}".format(random.randint(0, 0xFFFF)))
+    cur = db.cursor(name=f"c{random.randint(0, 0xFFFF):04X}")
     cur.execute(query, dict(product=product))
 
     while True:

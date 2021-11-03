@@ -1,26 +1,27 @@
+from pathlib import Path
 from typing import (
-    Tuple,
-    Dict,
-    List,
-    Union,
-    Iterator,
-    Optional,
-    Iterable,
     Collection,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
     cast,
 )
 from uuid import UUID
-from pathlib import Path
 
 import toolz
 from datacube.model import (
     Dataset,
-    GridSpec,
     DatasetType,
+    GridSpec,
     MetadataType,
     metadata_from_doc,
 )
 from datacube.utils.geometry import CRS
+
 from . import _jsoncache as base
 from ._text import split_and_check
 
@@ -80,7 +81,7 @@ def build_dc_product_map(
         metadata = mm.get(mt)
 
         if metadata is None:
-            raise ValueError("No such metadata %s for product %s" % (mt, name))
+            raise ValueError(f"No such metadata {mt} for product {name}")
 
         return DatasetType(metadata, doc)
 

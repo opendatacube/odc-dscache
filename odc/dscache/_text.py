@@ -15,7 +15,7 @@ def split_and_check(
 
     parts = s.split(separator)
     if len(parts) not in n:
-        raise ValueError('Failed to parse "{}"'.format(s))
+        raise ValueError(f'Failed to parse "{s}"')
     return tuple(parts)
 
 
@@ -24,8 +24,6 @@ def parse_range_int(s: str, separator: str = ":") -> Tuple[int, int]:
     try:
         _in, _out = (int(x) for x in split_and_check(s, separator, 2))
     except ValueError:
-        raise ValueError(
-            'Expect <int>{}<int> syntax, got "{}"'.format(separator, s)
-        ) from None
+        raise ValueError(f'Expect <int>{separator}<int> syntax, got "{s}"') from None
 
     return (_in, _out)

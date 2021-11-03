@@ -1,5 +1,7 @@
-import pytest
 from uuid import UUID
+
+import pytest
+
 from odc.dscache import JsonBlobCache
 from odc.dscache._jsoncache import doc2bytes
 

@@ -1,11 +1,12 @@
-from typing import Tuple, Optional, Dict
-from math import pi, floor
+from math import floor, pi
 from types import SimpleNamespace
-import toolz
-from datacube.utils.geometry import CRS
-from datacube.model import GridSpec, Dataset
-from .._text import split_and_check, parse_range_int
+from typing import Dict, Optional, Tuple
 
+import toolz
+from datacube.model import Dataset, GridSpec
+from datacube.utils.geometry import CRS
+
+from .._text import parse_range_int, split_and_check
 
 epsg3577 = CRS("epsg:3577")
 epsg6933 = CRS("epsg:6933")
@@ -230,8 +231,8 @@ def gridspec_from_crs(
     # index of the tile containing bottom left corner
     iy, ix = (int(floor(v / tsz)) for v, tsz in zip((y0, x0), tile_size))
 
-    y0_, x0_ = [
+    y0_, x0_ = (
         float((idx - pad) * tsz) for (idx, pad, tsz) in zip((iy, ix), pad_yx, tile_size)
-    ]
+    )
 
     return GridSpec(crs, tile_size, resolution=resolution, origin=(y0_, x0_))

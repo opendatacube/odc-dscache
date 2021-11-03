@@ -1,6 +1,7 @@
-from uuid import UUID
-from types import SimpleNamespace
 import datetime
+from types import SimpleNamespace
+from uuid import UUID
+
 from odc.dscache.tools import group_by_nothing
 
 
