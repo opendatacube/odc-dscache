@@ -95,6 +95,7 @@ def extract_native_albers_tile(
     ll = toolz.get_in(
         "grid_spatial.projection.geo_ref_points.ll".split("."), ds.metadata_doc
     )
+    assert ll is not None
     return (int(ll["x"] / tile_size), int(ll["y"] / tile_size))
 
 
@@ -152,23 +153,25 @@ def _parse_gridspec_string(s: str) -> GridSpec:
     "epsg:6936;-10x10;9600x9600"
     """
 
-    crs, res, shape = split_and_check(s, ";", 3)
+    crs, _res, _shape = split_and_check(s, ";", 3)
     try:
-        if "x" in res:
-            res = tuple(float(v) for v in split_and_check(res, "x", 2))
+        if "x" in _res:
+            r1, r2 = tuple(float(v) for v in split_and_check(_res, "x", 2))
+            res = (r1, r2)
         else:
-            res = float(res)
-            res = (-res, res)
+            tmp = float(_res)
+            res = (-tmp, tmp)
 
-        if "x" in shape:
-            shape = parse_range_int(shape, separator="x")
+        if "x" in _shape:
+            shape = parse_range_int(_shape, separator="x")
         else:
-            shape = int(shape)
-            shape = (shape, shape)
+            sz = int(_shape)
+            shape = (sz, sz)
     except ValueError:
         raise ValueError(f"Failed to parse gridspec: {s}") from None
 
-    tsz = tuple(abs(n * res) for n, res in zip(res, shape))
+    t1, t2 = tuple(abs(n * res) for n, res in zip(res, shape))
+    tsz = (t1, t2)
 
     return GridSpec(crs=CRS(crs), tile_size=tsz, resolution=res, origin=(0, 0))
 
@@ -227,7 +230,10 @@ def gridspec_from_crs(
     if resolution is None:
         resolution = (-tile_size[0], tile_size[1])
 
-    x0, y0, x1, y1 = crs.valid_region.to_crs(crs).boundingbox
+    valid_region = crs.valid_region
+    assert valid_region is not None
+
+    x0, y0, _, _ = valid_region.to_crs(crs).boundingbox
     # index of the tile containing bottom left corner
     iy, ix = (int(floor(v / tsz)) for v, tsz in zip((y0, x0), tile_size))
 

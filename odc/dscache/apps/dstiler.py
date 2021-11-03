@@ -72,7 +72,7 @@ def cli(native, native_albers, web, grid, dbfile):
         cache.add_grid(gs, group_prefix)
 
     with click.progressbar(cache.get_all(), length=cache.count, label=label) as dss:
-        for ds in binner(dss):
+        for _ in binner(dss):
             pass
 
     click.echo(f"Total bins: {len(cells):d}")
@@ -83,4 +83,4 @@ def cli(native, native_albers, web, grid, dbfile):
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter
