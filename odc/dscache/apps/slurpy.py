@@ -74,7 +74,7 @@ def cli(env, grid, year, output, products, complevel):
 
     for p in products:
         if p not in all_prods:
-            click.echo("No such product found: %s" % p)
+            click.echo(f"No such product found: {p}")
             raise click.Abort()
 
     query = {}
@@ -126,6 +126,7 @@ def cli(env, grid, year, output, products, complevel):
     dss = cache.tee(dss)
 
     cells = {}
+    group_prefix = ""
     if grid is not None:
         gs = parse_gridspec(grid)
         # TODO for named gridspecs should we use the name as group_prefix?
@@ -152,4 +153,4 @@ def cli(env, grid, year, output, products, complevel):
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter

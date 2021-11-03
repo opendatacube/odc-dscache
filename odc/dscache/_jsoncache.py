@@ -1,3 +1,4 @@
+"""JSON Blob Cache"""
 import functools
 import itertools
 import json
@@ -43,10 +44,9 @@ def key_to_bytes(k: Any) -> bytes:
     if isinstance(k, int):
         if k.bit_length() < 32:
             return k.to_bytes(4, "big")
-        elif k.bit_length() < 128:
+        if k.bit_length() < 128:
             return k.to_bytes(16, "big")
-        else:
-            return str(k).encode("utf8")
+        return str(k).encode("utf8")
     if isinstance(k, tuple):
         return functools.reduce(operator.add, map(key_to_bytes, k))
 
@@ -163,7 +163,7 @@ class JsonBlobCache:
 
         self._dbs = state.dbs
         self._comp: Optional[zstandard.ZstdCompressor] = state.comp
-        self._decomp: zstandard.ZstdCompressor = state.decomp
+        self._decomp: zstandard.ZstdDecompressor = state.decomp
         self._closed = False
         self._current_transaction: MaybeTransaction = None
 
@@ -198,7 +198,7 @@ class JsonBlobCache:
         if len(sample) == 0:
             return None
 
-        return zstandard.train_dictionary(dict_sz, sample).as_bytes()
+        return zstandard.train_dictionary(dict_sz, sample).as_bytes()  # type: ignore
 
     def _append_info_dict(self, prefix: str, oo: Document, tr: lmdb.Transaction):
         for k, v in dict2jsonKV(oo, prefix, self._comp):
@@ -396,17 +396,17 @@ class JsonBlobCache:
     def stream_group(self, group_name: str) -> Iterator[Tuple[UUID, Document]]:
         uu = self._get_group_raw(group_name)
         if uu is None:
-            raise ValueError("No such group: %s" % group_name)
+            raise ValueError(f"No such group: {group_name}")
 
         if len(uu) & 0xF:
-            raise ValueError("Wrong data size for group %s" % group_name)
+            raise ValueError(f"Wrong data size for group {group_name}")
 
         with self._dbs.main.begin(self._dbs.ds, buffers=True) as tr:
             for i in range(0, len(uu), 16):
                 key = uu[i : i + 16]
                 d = tr.get(key, None)
                 if d is None:
-                    raise ValueError("Missing dataset for %s" % str(UUID(bytes=key)))
+                    raise ValueError(f"Missing dataset for {str(UUID(bytes=key))}")
 
                 yield UUID(bytes=bytes(key)), self._extract_ds(d)
 
@@ -473,12 +473,12 @@ class JsonBlobCache:
 
 
 def db_exists(path: str) -> bool:
-    path = Path(path)
-    if not path.exists():
+    _path = Path(path)
+    if not _path.exists():
         return False
 
-    if path.is_dir():
-        return Path(path / "data.mdb").exists()
+    if _path.is_dir():
+        return Path(_path / "data.mdb").exists()
 
     return True
 
@@ -493,22 +493,22 @@ def maybe_delete_db(path: str) -> bool:
 
     You supply path which is either `db-dir-name` or `db-file-name`.
     """
-    path = Path(path)
-    if not path.exists():
+    _path = Path(path)
+    if not _path.exists():
         return False
 
-    if path.is_dir():
-        db, lock = (path / n for n in ["data.mdb", "lock.mdb"])
+    if _path.is_dir():
+        db, lock = (_path / n for n in ["data.mdb", "lock.mdb"])
     else:
-        db = path
-        lock = Path(str(path) + "-lock")
+        db = _path
+        lock = Path(str(_path) + "-lock")
 
     if db.exists() and lock.exists():
         db.unlink()
         lock.unlink()
 
-        if path.is_dir():
-            path.rmdir()
+        if _path.is_dir():
+            _path.rmdir()
 
     return True
 
@@ -538,7 +538,9 @@ def _from_existing_db(db, complevel: int = 6) -> JsonBlobCache:
         udata=db.open_db(b"udata", create=False),
     )
 
-    comp_params = {"dict_data": zstandard.ZstdCompressionDict(zdict)} if zdict else {}
+    comp_params: Dict[str, Any] = (
+        {"dict_data": zstandard.ZstdCompressionDict(zdict)} if zdict else {}
+    )
 
     comp = (
         None if readonly else zstandard.ZstdCompressor(level=complevel, **comp_params)
@@ -569,7 +571,9 @@ def _from_empty_db(db, complevel: int = 6, zdict: Optional[bytes] = None):
         udata=db.open_db(b"udata", create=True),
     )
 
-    comp_params = {"dict_data": zstandard.ZstdCompressionDict(zdict)} if zdict else {}
+    comp_params: Dict[str, Any] = (
+        {"dict_data": zstandard.ZstdCompressionDict(zdict)} if zdict else {}
+    )
 
     comp = zstandard.ZstdCompressor(level=complevel, **comp_params)
     decomp = zstandard.ZstdDecompressor(**comp_params)
@@ -691,8 +695,7 @@ def create_cache(
     # If db is not empty just call open on it
     if db.stat()["entries"] > 0:
         return _from_existing_db(db, complevel=complevel)
-    else:
-        return _from_empty_db(db, complevel=complevel, zdict=zdict)
+    return _from_empty_db(db, complevel=complevel, zdict=zdict)
 
 
 def test_key_to_value():

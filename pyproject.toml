@@ -19,6 +19,10 @@ max-line-length = 120
 
 disable = [
   "missing-function-docstring",
+  "missing-module-docstring",
+  "too-many-return-statements",
+  "too-many-arguments",
   "invalid-name",
   "fixme",
+  "R0801",
 ]

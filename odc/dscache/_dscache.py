@@ -47,7 +47,7 @@ def doc2ds(
 
     p = products.get(doc["product"], None)
     if p is None:
-        raise ValueError("No product named: %s" % doc["product"])
+        raise ValueError(f"No product named: {doc['product']}")
     return Dataset(p, doc["metadata"], uris=doc["uris"])
 
 
@@ -63,9 +63,9 @@ def gs2doc(gs: GridSpec) -> base.Document:
 def doc2gs(doc: Document) -> GridSpec:
     return GridSpec(
         crs=CRS(doc["crs"]),
-        tile_size=tuple(doc["tile_size"]),
-        resolution=tuple(doc["resolution"]),
-        origin=tuple(doc["origin"]),
+        tile_size=tuple(doc["tile_size"]),  # type: ignore
+        resolution=tuple(doc["resolution"]),  # type: ignore
+        origin=tuple(doc["origin"]),  # type: ignore
     )
 
 
@@ -104,7 +104,7 @@ def mk_group_name(idx: TileIdx, name: str = "unnamed_grid") -> str:
     x, y = idx[-2:]
     if len(idx) == 2:
         return f"{name}/{x:+05d}/{y:+05d}"
-    elif len(idx) == 3:
+    if len(idx) == 3:
         t = idx[0]
         return f"{name}/{t}/{x:+05d}/{y:+05d}"
     raise ValueError("Expect index in (x, y) or (t, x, y) format")
@@ -266,17 +266,21 @@ class DatasetCache:
             dss, max_transaction_size=max_transaction_size, transform=self._ds2doc
         )
 
-    def get(self, uuid: LaxUUID) -> Dataset:
+    def get(self, uuid: LaxUUID) -> Optional[Dataset]:
         """Extract single dataset with a given uuid, or return None if not found"""
         return doc2ds(self._db.get(uuid), self._products)
 
     def get_all(self) -> Iterator[Dataset]:
         for _, v in self._db.get_all():
-            yield doc2ds(v, self._products)
+            ds = doc2ds(v, self._products)
+            assert ds is not None
+            yield ds
 
     def stream_group(self, group_name: str) -> Iterator[Dataset]:
         for _, v in self._db.stream_group(group_name):
-            yield doc2ds(v, self._products)
+            ds = doc2ds(v, self._products)
+            assert ds is not None
+            yield ds
 
     @property
     def grids(self) -> Dict[str, GridSpec]:

@@ -2,7 +2,7 @@
 Tools for dealing with datacube db
 """
 import random
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import datacube.utils.geometry as geom
 import psycopg2
@@ -12,7 +12,7 @@ from datacube.config import LocalConfig
 from datacube.model import Dataset, GridSpec
 from odc.index import group_by_nothing
 
-from .. import DatasetCache
+from .. import DatasetCache, TileIdx
 
 
 def dictionary_from_product_list(
@@ -45,7 +45,7 @@ def dictionary_from_product_list(
     if len(samples) == 0:
         return None
 
-    return DatasetCache.train_dictionary(samples, dict_sz)
+    return DatasetCache.train_dictionary(samples, dict_sz)  # type: ignore
 
 
 def db_connect(cfg=None):
@@ -97,7 +97,7 @@ def mk_raw2ds(products):
     def raw2ds(ds):
         product = products.get(ds["product"], None)
         if product is None:
-            raise ValueError("Missing product {}".format(ds["product"]))
+            raise ValueError(f"Missing product: {ds['product']}")
         return Dataset(product, ds["metadata"], uris=ds["uris"])
 
     return raw2ds
@@ -118,7 +118,8 @@ def raw_dataset_stream(product, db, read_chunk=100, limit=None):
     if isinstance(db, str) or db is None:
         db = db_connect(db)
 
-    query = """
+    _limit = f"LIMIT {limit:d}" if limit else ""
+    query = f"""
 select
 jsonb_build_object(
   'product', %(product)s,
@@ -130,10 +131,8 @@ jsonb_build_object(
 from agdc.dataset
 where archived is null
 and dataset_type_ref = (select id from agdc.dataset_type where name = %(product)s)
-{limit};
-""".format(
-        limit=f"LIMIT {limit:d}" if limit else ""
-    )
+{_limit};
+"""
 
     cur = db.cursor(name=f"c{random.randint(0, 0xFFFF):04X}")
     cur.execute(query, dict(product=product))
@@ -155,6 +154,7 @@ def gs_albers():
     )
 
 
+# pylint: disable=too-few-public-methods
 class DcTileExtract:
     """Construct ``datacube.api.grid_workflow.Tile`` object from dataset cache."""
 
@@ -215,21 +215,26 @@ def grid_tiles_to_geojson(
 
     resolution = abs(gs.tile_size[0]) / 4  # up to 4 points per side
 
-    features = [
-        dict(
+    def mk_feature(tidx: TileIdx, count: int) -> Dict[str, Any]:
+        if len(tidx) == 3:
+            _xy: Tuple[int, int] = tidx[1:]  # type: ignore
+        else:
+            _xy: Tuple[int, int] = tidx  # type: ignore
+
+        return dict(
             type="Feature",
-            geometry=gs.tile_geobox(tidx)
+            geometry=gs.tile_geobox(_xy)
             .extent.to_crs(
                 "epsg:4326", resolution=resolution, wrapdateline=wrapdateline
             )
             .json,
             properties={
-                "title": f"{tidx[0]:+05d},{tidx[1]:+05d}",
-                "count": cc,
-                **style,
+                "title": f"{_xy[0]:+05d},{_xy[1]:+05d}",
+                "count": count,
+                **style,  # type: ignore
             },
         )
-        for tidx, cc in cache.tiles(grid)
-    ]
+
+    features = [mk_feature(tidx, cc) for tidx, cc in cache.tiles(grid)]
 
     return {"type": "FeatureCollection", "features": features}
