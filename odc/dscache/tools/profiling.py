@@ -1,5 +1,5 @@
-from types import SimpleNamespace
 import timeit
+from types import SimpleNamespace
 
 
 def _rr2s(r):

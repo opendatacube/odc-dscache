@@ -1,15 +1,15 @@
 from functools import partial
 
 import click
+from odc.index import bin_dataset_stream
+
 from odc import dscache
 from odc.dscache.tools.tiling import (
     bin_by_native_tile,
-    web_gs,
     extract_native_albers_tile,
     parse_gridspec,
+    web_gs,
 )
-from odc.dscache._dscache import mk_group_name
-from odc.index import bin_dataset_stream
 
 
 @click.command("dstiler")
@@ -45,7 +45,7 @@ def cli(native, native_albers, web, grid, dbfile):
                      africa_10  (20,30,60 are also available)
     """
     cache = dscache.open_rw(dbfile)
-    label = "Processing {} ({:,d} datasets)".format(dbfile, cache.count)
+    label = f"Processing {dbfile} ({cache.count:,d} datasets)"
     group_prefix = "grid"
     gs = None
 
@@ -75,7 +75,7 @@ def cli(native, native_albers, web, grid, dbfile):
         for ds in binner(dss):
             pass
 
-    click.echo("Total bins: {:d}".format(len(cells)))
+    click.echo(f"Total bins: {len(cells):d}")
 
     with click.progressbar(cells.values(), length=len(cells), label="Saving") as groups:
         for group in groups:

@@ -1,13 +1,18 @@
-import click
-from threading import Thread
 import queue
-import datacube
-from odc import dscache
-from odc.dscache.tools import db_connect, raw_dataset_stream, mk_raw2ds
-from odc.dscache.tools import dictionary_from_product_list
-from odc.dscache.tools.tiling import parse_gridspec
-from odc.index import bin_dataset_stream, ordered_dss, dataset_count
+from threading import Thread
 
+import click
+import datacube
+from odc.index import bin_dataset_stream, dataset_count, ordered_dss
+
+from odc import dscache
+from odc.dscache.tools import (
+    db_connect,
+    dictionary_from_product_list,
+    mk_raw2ds,
+    raw_dataset_stream,
+)
+from odc.dscache.tools.tiling import parse_gridspec
 
 EOS = object()
 
@@ -81,7 +86,7 @@ def cli(env, grid, year, output, products, complevel):
 
     n_total = 0
     for p, c in counts.items():
-        click.echo("..{}: {:8,d}".format(p, c))
+        click.echo(f"..{p}: {c:8,d}")
         n_total += c
 
     if n_total == 0:
@@ -128,13 +133,13 @@ def cli(env, grid, year, output, products, complevel):
         cache.add_grid(gs, group_prefix)
         dss = bin_dataset_stream(gs, dss, cells)
 
-    label = "Processing ({:8,d})".format(n_total)
+    label = f"Processing ({n_total:8,d})"
     with click.progressbar(dss, label=label, length=n_total) as dss:
         for _ in dss:
             pass
 
     if grid is not None:
-        click.echo("Total bins: {:d}".format(len(cells)))
+        click.echo(f"Total bins: {len(cells):d}")
 
         with click.progressbar(
             cells.values(), length=len(cells), label="Saving"

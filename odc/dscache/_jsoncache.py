@@ -1,29 +1,30 @@
-from typing import (
-    Optional,
-    Tuple,
-    List,
-    Collection,
-    Iterator,
-    Union,
-    Any,
-    Dict,
-    Iterable,
-)
-from uuid import UUID
-import json
-import lmdb
-import zstandard
-import operator
 import functools
 import itertools
-import toolz
-from types import SimpleNamespace
+import json
+import operator
 from pathlib import Path
+from types import SimpleNamespace
+from typing import (
+    Any,
+    Collection,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
+from uuid import UUID
+
+import lmdb
+import toolz
+import zstandard
 
 # pylint: disable=invalid-name,too-many-public-methods
 
 FORMAT_VERSION = b"0001"
-RESERVED_INFO_KEYS = set(["version", "zdict"])
+RESERVED_INFO_KEYS = {"version", "zdict"}
 
 Prefix = Union[str, bytes]
 LaxUUID = Union[str, UUID]
@@ -405,7 +406,7 @@ class JsonBlobCache:
                 key = uu[i : i + 16]
                 d = tr.get(key, None)
                 if d is None:
-                    raise ValueError("Missing dataset for %s" % (str(UUID(bytes=key))))
+                    raise ValueError("Missing dataset for %s" % str(UUID(bytes=key)))
 
                 yield UUID(bytes=bytes(key)), self._extract_ds(d)
 
@@ -497,7 +498,7 @@ def maybe_delete_db(path: str) -> bool:
         return False
 
     if path.is_dir():
-        db, lock = [path / n for n in ["data.mdb", "lock.mdb"]]
+        db, lock = (path / n for n in ["data.mdb", "lock.mdb"])
     else:
         db = path
         lock = Path(str(path) + "-lock")

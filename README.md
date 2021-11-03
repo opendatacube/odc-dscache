@@ -65,16 +65,16 @@ By default we assume that database file is read-only. If however some other proc
 ```python
 from odc import dscache
 
-cache = dscache.open_ro('sample.db')
+cache = dscache.open_ro("sample.db")
 
 # access individual dataset: returns None if not found
-ds = cache.get('005b0ab7-5454-4eef-829d-ed081135aefb')
+ds = cache.get("005b0ab7-5454-4eef-829d-ed081135aefb")
 if ds is not None:
-   do_stuff_with(ds)
+    do_stuff_with(ds)
 
 # stream all datasets
 for ds in cache.get_all():
-   do_stuff_with(ds)
+    do_stuff_with(ds)
 ```
 
 For more details see [notebook](../notebooks/dscache-example.ipynb).

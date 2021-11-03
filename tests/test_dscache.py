@@ -1,4 +1,4 @@
-from odc.dscache._dscache import parse_group_name, mk_group_name
+from odc.dscache._dscache import mk_group_name, parse_group_name
 
 
 def test_group_name():
