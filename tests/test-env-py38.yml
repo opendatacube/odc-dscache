@@ -1,0 +1,46 @@
+# Conda environment for running tests in odc-stac
+#   conda env create -f test-env-py38.yml
+#   conda activate odc-stac-tests-py38
+
+name: odc-dscache-tests-py38
+channels:
+  - conda-forge
+
+dependencies:
+  - python =3.8
+
+  # odc-dscache dependencies
+  - datacube >=1.8.6
+  - odc-stac
+  - zstandard
+  - toolz
+  - click
+  - python-lmdb
+
+  # For tests
+  - pytest
+  - pytest-cov
+  - pytest-timeout
+  - mock
+
+  # for docs
+  - sphinx
+  - sphinx_rtd_theme
+  - sphinx-autodoc-typehints
+  - nbsphinx
+  - ipywidgets
+  - jupytext
+
+  # dev (shed dependencies)
+  - autoflake
+  - black
+  - isort
+  - pyupgrade
+  - libcst
+  - mypy
+  - pylint
+
+  - pip=20
+  - pip:
+      # dev
+      - shed
