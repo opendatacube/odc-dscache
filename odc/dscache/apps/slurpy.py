@@ -3,13 +3,14 @@ from threading import Thread
 
 import click
 import datacube
-from odc.index import bin_dataset_stream, dataset_count, ordered_dss
-
 from odc import dscache
 from odc.dscache.tools import (
+    bin_dataset_stream,
+    dataset_count,
     db_connect,
     dictionary_from_product_list,
     mk_raw2ds,
+    ordered_dss,
     raw_dataset_stream,
 )
 from odc.dscache.tools.tiling import parse_gridspec
