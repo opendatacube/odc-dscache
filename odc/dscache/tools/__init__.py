@@ -12,7 +12,30 @@ from datacube.config import LocalConfig
 from datacube.model import Dataset, GridSpec
 
 from .. import DatasetCache, TileIdx
-from ._index import bin_dataset_stream, dataset_count, ordered_dss, all_datasets
+from ._index import (
+    all_datasets,
+    bin_dataset_stream,
+    chopped_dss,
+    dataset_count,
+    ordered_dss,
+    solar_offset,
+)
+
+__all__ = (
+    "DcTileExtract",
+    "all_datasets",
+    "bin_dataset_stream",
+    "dataset_count",
+    "db_connect",
+    "dictionary_from_product_list",
+    "chopped_dss",
+    "grid_tiles_to_geojson",
+    "gs_albers",
+    "mk_raw2ds",
+    "ordered_dss",
+    "raw_dataset_stream",
+    "solar_offset",
+)
 
 
 def dictionary_from_product_list(
