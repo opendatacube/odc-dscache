@@ -2,7 +2,7 @@
 Tools for dealing with datacube db
 """
 import random
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import datacube.utils.geometry as geom
 import psycopg2
@@ -10,7 +10,6 @@ from datacube import Datacube
 from datacube.api.grid_workflow import Tile
 from datacube.config import LocalConfig
 from datacube.model import Dataset, GridSpec
-from odc.index import group_by_nothing
 
 from .. import DatasetCache, TileIdx
 
@@ -177,10 +176,7 @@ class DcTileExtract:
             group_by = self._default_groupby
 
         dss = list(self._cache.stream_grid_tile(tile_idx, grid=self._grid))
-        if group_by == "nothing":
-            sources = group_by_nothing(dss)
-        else:
-            sources = Datacube.group_datasets(dss, group_by)
+        sources = Datacube.group_datasets(dss, group_by)
 
         geobox = self._gs.tile_geobox(tile_idx)
         return Tile(sources, geobox)
