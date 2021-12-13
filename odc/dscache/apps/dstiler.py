@@ -1,9 +1,8 @@
 from functools import partial
 
 import click
-from odc.index import bin_dataset_stream
-
 from odc import dscache
+from odc.dscache.tools import bin_dataset_stream
 from odc.dscache.tools.tiling import (
     bin_by_native_tile,
     extract_native_albers_tile,

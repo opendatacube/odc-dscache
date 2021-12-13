@@ -12,6 +12,7 @@ from datacube.config import LocalConfig
 from datacube.model import Dataset, GridSpec
 
 from .. import DatasetCache, TileIdx
+from ._index import bin_dataset_stream, dataset_count, ordered_dss, all_datasets
 
 
 def dictionary_from_product_list(
