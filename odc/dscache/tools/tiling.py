@@ -40,6 +40,21 @@ GRIDS = {
         )
         for n in (10, 20, 30, 60)
     },
+    "au_extended": GridSpec(
+        crs=epsg3577,
+        tile_size=(96_000.0, 96_000.0),
+        resolution=(-96_000, 96_000),
+        origin=(-7912000.0, 136000.0),
+    ),
+    **{
+        f"au_extended_{n}": GridSpec(
+            crs=epsg3577,
+            tile_size=(96_000.0, 96_000.0),
+            resolution=(-n, n),
+            origin=(-7912000.0, 136000.0),
+        )
+        for n in (10, 20, 30, 60)
+    },
     "global": GridSpec(
         crs=epsg6933,
         tile_size=(96_000.0, 96_000.0),
