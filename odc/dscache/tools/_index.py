@@ -126,7 +126,7 @@ def chop_query_by_time(q: Query, freq: str = "m") -> Iterator[Query]:
     if time is None:
         raise ValueError("Need time range in the query")
 
-    for (t0, t1) in time_range(time.begin, time.end, freq=freq):
+    for t0, t1 in time_range(time.begin, time.end, freq=freq):
         yield Query(**qq, time=Range(t0, t1))
 
 

@@ -41,7 +41,6 @@ __all__ = (
 def dictionary_from_product_list(
     dc, products, samples_per_product=10, dict_sz=8 * 1024, query=None
 ):
-
     """Get a sample of datasets from a bunch of products and train compression
     dictionary.
 
@@ -182,7 +181,6 @@ class DcTileExtract:
     """Construct ``datacube.api.grid_workflow.Tile`` object from dataset cache."""
 
     def __init__(self, cache, grid=None, group_by="time"):
-
         gs = cache.grids.get(grid, None)
         if gs is None:
             raise ValueError(f"No such grid: ${grid}")

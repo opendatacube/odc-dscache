@@ -699,7 +699,6 @@ def create_cache(
 
 
 def test_key_to_value():
-
     for k in ("string", 217987, 215781587158712587, ("AAA", 3)):
         bb = key_to_bytes(k)
         assert isinstance(bb, bytes)
