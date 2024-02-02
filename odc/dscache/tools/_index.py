@@ -145,6 +145,7 @@ def ordered_dss(dc: Datacube, freq: str = "m", key=None, **query):
                 ``lambda ds: (ds.center_time, ds.metadata.region_code)``
     """
     qq = Query(**query)
+    # pylint: disable=unnecessary-lambda-assignment
     if key is None:
         key = lambda ds: ds.center_time
 

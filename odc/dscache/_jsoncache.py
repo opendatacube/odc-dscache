@@ -301,6 +301,7 @@ class JsonBlobCache:
         :transform: If docs contains some other objects you can supply mapping from that Data type to Tuple[uuid, dict]
         """
         have_some = True
+        # pylint: disable=unnecessary-lambda-assignment
         if transform is None:
             transform = lambda x: x
 
