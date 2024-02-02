@@ -54,16 +54,19 @@ def cli(native, native_albers, web, grid, dbfile):
         binner = partial(bin_by_native_tile, cells=cells)
     elif native_albers:
         group_prefix = "albers"
+        # pylint: disable=unnecessary-lambda-assignment
         binner = lambda dss: bin_by_native_tile(
             dss, cells, native_tile_id=extract_native_albers_tile
         )
     elif web is not None:
         gs = web_gs(web)
         group_prefix = "web_" + str(web)
+        # pylint: disable=unnecessary-lambda-assignment
         binner = lambda dss: bin_dataset_stream(gs, dss, cells)
     else:
         gs = parse_gridspec(grid)
         group_prefix = f"epsg{gs.crs.epsg:d}"
+        # pylint: disable=unnecessary-lambda-assignment
         binner = lambda dss: bin_dataset_stream(gs, dss, cells)
 
     if gs is not None:

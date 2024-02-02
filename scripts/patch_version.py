@@ -14,6 +14,7 @@ def match_version(line):
     return version_str
 
 
+# pylint: disable=redefined-outer-name, unspecified-encoding
 def mk_dev_version(v, build_number):
     *fixed, last = version.parse(v).release
     next_version = (*fixed, f"{last+1:d}-dev{build_number:d}")
