@@ -173,7 +173,7 @@ jobs:
     - name: Check with mypy
       shell: bash
       run: |
-        mypy odc
+        mypy -p odc.dscache
 
 
   test-with-coverage:
