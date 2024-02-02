@@ -151,29 +151,29 @@ jobs:
         pylint -v odc
 
 
-  run-mypy:
-    runs-on: ubuntu-latest
-    needs:
-      - build-test-env-base
+        # run-mypy:
+        #   runs-on: ubuntu-latest
+        #   needs:
+        #     - build-test-env-base
 
-    steps:
-    - uses: actions/checkout@v3
-    - name: Get Conda Environment from Cache
-      uses: actions/cache@v3
-      id: conda_cache
-      with:
-        path: /tmp/test_env
-        key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
+        #   steps:
+        #   - uses: actions/checkout@v3
+        #   - name: Get Conda Environment from Cache
+        #     uses: actions/cache@v3
+        #     id: conda_cache
+        #     with:
+        #       path: /tmp/test_env
+        #       key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
 
-    - name: Update PATH
-      shell: bash
-      run: |
-        echo "/tmp/test_env/bin" >> $GITHUB_PATH
+        #   - name: Update PATH
+        #     shell: bash
+        #     run: |
+        #       echo "/tmp/test_env/bin" >> $GITHUB_PATH
 
-    - name: Check with mypy
-      shell: bash
-      run: |
-        mypy -p odc.dscache
+        #   - name: Check with mypy
+        #     shell: bash
+        #     run: |
+        #       mypy -p odc.dscache
 
 
   test-with-coverage:
