@@ -1,4 +1,5 @@
 """JSON Blob Cache"""
+
 import functools
 import itertools
 import json
@@ -301,6 +302,7 @@ class JsonBlobCache:
         :transform: If docs contains some other objects you can supply mapping from that Data type to Tuple[uuid, dict]
         """
         have_some = True
+        # pylint: disable=unnecessary-lambda-assignment
         if transform is None:
             transform = lambda x: x
 
@@ -699,7 +701,6 @@ def create_cache(
 
 
 def test_key_to_value():
-
     for k in ("string", 217987, 215781587158712587, ("AAA", 3)):
         bb = key_to_bytes(k)
         assert isinstance(bb, bytes)

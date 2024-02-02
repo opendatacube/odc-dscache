@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/cache@v2
+    - uses: actions/checkout@v3
+    - uses: actions/cache@v3
       id: wheels_cache
       with:
         path: ./wheels
@@ -26,7 +26,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v1
       with:
-        python-version: 3.8
+        python-version: "3.10"
 
     - name: Install Twine
       run: |

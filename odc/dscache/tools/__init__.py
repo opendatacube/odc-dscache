@@ -1,6 +1,7 @@
 """
 Tools for dealing with datacube db
 """
+
 import random
 from typing import Any, Dict, Optional, Tuple
 
@@ -41,7 +42,6 @@ __all__ = (
 def dictionary_from_product_list(
     dc, products, samples_per_product=10, dict_sz=8 * 1024, query=None
 ):
-
     """Get a sample of datasets from a bunch of products and train compression
     dictionary.
 
@@ -83,13 +83,13 @@ def db_connect(cfg=None):
     if isinstance(cfg, str) or cfg is None:
         cfg = LocalConfig.find(env=cfg)
 
-    cfg_remap = dict(
-        dbname="db_database",
-        user="db_username",
-        password="db_password",
-        host="db_hostname",
-        port="db_port",
-    )
+    cfg_remap = {
+        "dbname": "db_database",
+        "user": "db_username",
+        "password": "db_password",
+        "host": "db_hostname",
+        "port": "db_port",
+    }
 
     pg_cfg = {k: cfg.get(cfg_name, None) for k, cfg_name in cfg_remap.items()}
 
@@ -158,7 +158,7 @@ and dataset_type_ref = (select id from agdc.dataset_type where name = %(product)
 """
 
     cur = db.cursor(name=f"c{random.randint(0, 0xFFFF):04X}")
-    cur.execute(query, dict(product=product))
+    cur.execute(query, {"product": product})
 
     while True:
         chunk = cur.fetchmany(read_chunk)
@@ -182,7 +182,6 @@ class DcTileExtract:
     """Construct ``datacube.api.grid_workflow.Tile`` object from dataset cache."""
 
     def __init__(self, cache, grid=None, group_by="time"):
-
         gs = cache.grids.get(grid, None)
         if gs is None:
             raise ValueError(f"No such grid: ${grid}")
@@ -241,19 +240,19 @@ def grid_tiles_to_geojson(
         else:
             _xy: Tuple[int, int] = tidx  # type: ignore
 
-        return dict(
-            type="Feature",
-            geometry=gs.tile_geobox(_xy)
+        return {
+            "type": "Feature",
+            "geometry": gs.tile_geobox(_xy)
             .extent.to_crs(
                 "epsg:4326", resolution=resolution, wrapdateline=wrapdateline
             )
             .json,
-            properties={
+            "properties": {
                 "title": f"{_xy[0]:+05d},{_xy[1]:+05d}",
                 "count": count,
                 **style,  # type: ignore
             },
-        )
+        }
 
     features = [mk_feature(tidx, cc) for tidx, cc in cache.tiles(grid)]
 
