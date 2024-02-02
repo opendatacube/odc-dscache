@@ -9,14 +9,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Setup Python
       uses: actions/setup-python@v1
       with:
-        python-version: 3.8
+        python-version: "3.10"
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: wheels_cache
       with:
         path: ./wheels
@@ -55,13 +55,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: conda_cache
       with:
         path: /tmp/test_env
-        key: ${{ runner.os }}-test-env-py38-${{ hashFiles('tests/test-env-py38.yml') }}
+        key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
 
     - uses: conda-incubator/setup-miniconda@v2
       if: steps.conda_cache.outputs.cache-hit != 'true'
@@ -87,7 +87,7 @@ jobs:
       shell: bash -l {0}
       if: steps.conda_cache.outputs.cache-hit != 'true'
       run: |
-        mamba env create -f tests/test-env-py38.yml -p /tmp/test_env
+        mamba env create -f tests/test-env-py310.yml -p /tmp/test_env
 
     - name: Check Python Env
       shell: bash -l {0}
@@ -107,8 +107,8 @@ jobs:
       uses: actions/cache@v2
       id: conda_cache
       with:
-        path:  /tmp/test_env
-        key: ${{ runner.os }}-test-env-py38-${{ hashFiles('tests/test-env-py38.yml') }}
+        path: /tmp/test_env
+        key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
 
     - name: Update PATH
       shell: bash
@@ -132,8 +132,8 @@ jobs:
       uses: actions/cache@v2
       id: conda_cache
       with:
-        path:  /tmp/test_env
-        key: ${{ runner.os }}-test-env-py38-${{ hashFiles('tests/test-env-py38.yml') }}
+        path: /tmp/test_env
+        key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
 
     - name: Update PATH
       shell: bash
@@ -162,8 +162,8 @@ jobs:
       uses: actions/cache@v2
       id: conda_cache
       with:
-        path:  /tmp/test_env
-        key: ${{ runner.os }}-test-env-py38-${{ hashFiles('tests/test-env-py38.yml') }}
+        path: /tmp/test_env
+        key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
 
     - name: Update PATH
       shell: bash
@@ -192,7 +192,7 @@ jobs:
       with:
         path: /tmp/test_env
 
-        key: ${{ runner.os }}-test-env-py38-${{ hashFiles('tests/test-env-py38.yml') }}
+        key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
 
     - name: Update PATH
       shell: bash
@@ -268,7 +268,7 @@ jobs:
       id: conda_cache
       with:
         path: /tmp/test_env
-        key: ${{ runner.os }}-test-env-py38-${{ hashFiles('tests/test-env-py38.yml') }}
+        key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
 
     - name: Update PATH
       shell: bash

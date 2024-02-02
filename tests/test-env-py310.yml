@@ -2,12 +2,12 @@
 #   conda env create -f test-env-py38.yml
 #   conda activate odc-stac-tests-py38
 
-name: odc-dscache-tests-py38
+name: odc-dscache-tests-py310
 channels:
   - conda-forge
 
 dependencies:
-  - python =3.8
+  - python =3.10
 
   # odc-dscache dependencies
   - datacube >=1.8.6
@@ -39,7 +39,7 @@ dependencies:
   - mypy
   - pylint
 
-  - pip=20
+  - pip
   - pip:
       # dev
       - shed
