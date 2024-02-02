@@ -1,4 +1,5 @@
 """These should probably be in datacube library."""
+
 import datetime
 from datetime import timedelta
 from random import randint
@@ -106,7 +107,7 @@ def season_range(year: int, season: str) -> Tuple[datetime.datetime, datetime.da
 
     DJF for year X starts in Dec X-1 and ends in Feb X.
     """
-    seasons = dict(djf=-1, mam=3, jja=6, son=9)
+    seasons = {"djf": -1, "mam": 3, "jja": 6, "son": 9}
 
     start_month = seasons.get(season.lower())
     if start_month is None:
@@ -121,7 +122,7 @@ def chop_query_by_time(q: Query, freq: str = "m") -> Iterator[Query]:
     Given a query over longer period of time, chop it up along the time dimension
     into smaller queries each covering a shorter time period (year, month, week or day).
     """
-    qq = dict(**q.search_terms)
+    qq = {**q.search_terms}
     time = qq.pop("time", None)
     if time is None:
         raise ValueError("Need time range in the query")
@@ -289,7 +290,7 @@ and dataset_type_ref = (select id from agdc.dataset_type where name = %(product)
 """
     cursor_name = f"c{randint(0, 0xFFFF):04X}"
     with db.cursor(name=cursor_name) as cursor:
-        cursor.execute(query, dict(product=product))
+        cursor.execute(query, {"product": product})
 
         while True:
             chunk = cursor.fetchmany(read_chunk)

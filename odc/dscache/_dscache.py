@@ -36,7 +36,10 @@ TileIdx = Union[Tuple[int, int], Tuple[str, int, int]]
 
 
 def ds2doc(ds) -> Tuple[UUID, Document]:
-    return (ds.id, dict(uris=ds.uris, product=ds.type.name, metadata=ds.metadata_doc))
+    return (
+        ds.id,
+        {"uris": ds.uris, "product": ds.type.name, "metadata": ds.metadata_doc},
+    )
 
 
 def doc2ds(
@@ -52,12 +55,12 @@ def doc2ds(
 
 
 def gs2doc(gs: GridSpec) -> base.Document:
-    return dict(
-        crs=str(gs.crs),
-        tile_size=list(gs.tile_size),
-        resolution=list(gs.resolution),
-        origin=list(gs.origin),
-    )
+    return {
+        "crs": str(gs.crs),
+        "tile_size": list(gs.tile_size),
+        "resolution": list(gs.resolution),
+        "origin": list(gs.origin),
+    }
 
 
 def doc2gs(doc: Document) -> GridSpec:

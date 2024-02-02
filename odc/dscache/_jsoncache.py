@@ -1,4 +1,5 @@
 """JSON Blob Cache"""
+
 import functools
 import itertools
 import json
