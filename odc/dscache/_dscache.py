@@ -92,7 +92,7 @@ def build_dc_product_map(
 
 
 def _metadata_from_products(
-    products: Dict[str, DatasetType]
+    products: Dict[str, DatasetType],
 ) -> Dict[str, MetadataType]:
     mm = {}
     for p in products.values():
