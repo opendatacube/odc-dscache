@@ -5,12 +5,13 @@ Tools for dealing with datacube db
 import random
 from typing import Any, Dict, Optional, Tuple
 
-import datacube.utils.geometry as geom
 import psycopg2
-from datacube import Datacube
-from datacube.api.grid_workflow import Tile
-from datacube.config import LocalConfig
-from datacube.model import Dataset, GridSpec
+# from datacube import Datacube
+# from datacube.api.grid_workflow import Tile
+from datacube.cfg import ODCConfig
+from datacube.model import Dataset
+from odc.geo import CRS
+from odc.geo.gridspec import GridSpec
 
 from .. import DatasetCache, TileIdx
 from ._index import (
@@ -21,9 +22,10 @@ from ._index import (
     ordered_dss,
     solar_offset,
 )
+from .._utils import to_tile_shape
 
 __all__ = (
-    "DcTileExtract",
+    # "DcTileExtract",
     "all_datasets",
     "bin_dataset_stream",
     "dataset_count",
@@ -78,10 +80,10 @@ def db_connect(cfg=None):
       None -- use default datacube config
       str  -- use config with a given name
 
-      LocalConfig -- use loaded config object
+      ODCConfig -- use loaded config object
     """
     if isinstance(cfg, str) or cfg is None:
-        cfg = LocalConfig.find(env=cfg)
+        cfg = ODCConfig(env=cfg)
 
     cfg_remap = {
         "dbname": "db_database",
@@ -110,7 +112,7 @@ def mk_raw2ds(products):
     Here "raw dataset" is just a python dictionary with fields:
 
     - product: str -- product name
-    - uris: [str] -- list of dataset uris
+    - uri: str -- dataset uri
     - metadata: dict -- dataset metadata document
 
     see `raw_dataset_stream`
@@ -121,7 +123,7 @@ def mk_raw2ds(products):
         product = products.get(ds["product"], None)
         if product is None:
             raise ValueError(f"Missing product: {ds['product']}")
-        return Dataset(product, ds["metadata"], uris=ds["uris"])
+        return Dataset(product, ds["metadata"], uri=ds["uri"])
 
     return raw2ds
 
@@ -132,7 +134,7 @@ def raw_dataset_stream(product, db, read_chunk=100, limit=None):
     Datasets are returned in "raw form", basically just a python dictionary with fields:
 
     - product: str -- product name
-    - uris: [str] -- list of dataset uris
+    - uri: str -- dataset uri
     - metadata: dict -- dataset metadata document
     """
 
@@ -146,10 +148,11 @@ def raw_dataset_stream(product, db, read_chunk=100, limit=None):
 select
 jsonb_build_object(
   'product', %(product)s,
-  'uris', array((select _loc_.uri_scheme ||':'||_loc_.uri_body
-                 from agdc.dataset_location as _loc_
-                 where _loc_.dataset_ref = agdc.dataset.id and _loc_.archived is null
-                 order by _loc_.added desc, _loc_.id desc)),
+  'uri', (select _loc_.uri_scheme ||':'||_loc_.uri_body
+          from agdc.dataset_location as _loc_
+          where _loc_.dataset_ref = agdc.dataset.id and _loc_.archived is null
+          order by _loc_.added desc, _loc_.id desc
+          limit 1),
   'metadata', metadata) as dataset
 from agdc.dataset
 where archived is null
@@ -173,36 +176,36 @@ and dataset_type_ref = (select id from agdc.dataset_type where name = %(product)
 
 def gs_albers():
     return GridSpec(
-        crs=geom.CRS("EPSG:3577"), tile_size=(100000.0, 100000.0), resolution=(-25, 25)
+        crs=CRS("EPSG:3577"), tile_shape=to_tile_shape((100000.0, 100000.0), 25), resolution=25
     )
 
 
 # pylint: disable=too-few-public-methods
-class DcTileExtract:
-    """Construct ``datacube.api.grid_workflow.Tile`` object from dataset cache."""
+# class DcTileExtract:
+#     """Construct ``datacube.api.grid_workflow.Tile`` object from dataset cache."""
 
-    def __init__(self, cache, grid=None, group_by="time"):
-        gs = cache.grids.get(grid, None)
-        if gs is None:
-            raise ValueError(f"No such grid: ${grid}")
+#     def __init__(self, cache, grid=None, group_by="time"):
+#         gs = cache.grids.get(grid, None)
+#         if gs is None:
+#             raise ValueError(f"No such grid: ${grid}")
 
-        self._cache = cache
-        self._grid = grid
-        self._gs = gs
-        self._default_groupby = group_by
+#         self._cache = cache
+#         self._grid = grid
+#         self._gs = gs
+#         self._default_groupby = group_by
 
-    def __call__(self, tile_idx, _y=None, group_by=None):
-        if _y is not None:
-            tile_idx = (tile_idx, _y)
+#     def __call__(self, tile_idx, _y=None, group_by=None):
+#         if _y is not None:
+#             tile_idx = (tile_idx, _y)
 
-        if group_by is None:
-            group_by = self._default_groupby
+#         if group_by is None:
+#             group_by = self._default_groupby
 
-        dss = list(self._cache.stream_grid_tile(tile_idx, grid=self._grid))
-        sources = Datacube.group_datasets(dss, group_by)
+#         dss = list(self._cache.stream_grid_tile(tile_idx, grid=self._grid))
+#         sources = Datacube.group_datasets(dss, group_by)
 
-        geobox = self._gs.tile_geobox(tile_idx)
-        return Tile(sources, geobox)
+#         geobox = self._gs.tile_geobox(tile_idx)
+#         return Tile(sources, geobox)
 
 
 def grid_tiles_to_geojson(

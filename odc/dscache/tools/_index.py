@@ -12,7 +12,7 @@ import psycopg2
 from datacube import Datacube
 from datacube.api.query import Query
 from datacube.model import Dataset, Range
-from datacube.utils.geometry import Geometry
+from odc.geo import Geometry
 from pandas import Period
 
 

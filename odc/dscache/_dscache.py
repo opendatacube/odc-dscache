@@ -15,20 +15,21 @@ from uuid import UUID
 import toolz
 from datacube.model import (
     Dataset,
-    DatasetType,
-    GridSpec,
+    Product,
     MetadataType,
     metadata_from_doc,
 )
-from datacube.utils.geometry import CRS
+from odc.geo import CRS, resyx_, yx_
+from odc.geo.gridspec import GridSpec
 
 from . import _jsoncache as base
 from ._text import split_and_check
+from ._utils import to_tile_shape
 
 # pylint: disable=invalid-name,too-many-public-methods
 
 ProductCollection = Union[
-    Iterator[DatasetType], List[DatasetType], Dict[str, DatasetType]
+    Iterator[Product], List[Product], Dict[str, Product]
 ]
 Document = base.Document
 LaxUUID = base.LaxUUID
@@ -38,12 +39,12 @@ TileIdx = Union[Tuple[int, int], Tuple[str, int, int]]
 def ds2doc(ds) -> Tuple[UUID, Document]:
     return (
         ds.id,
-        {"uris": ds.uris, "product": ds.type.name, "metadata": ds.metadata_doc},
+        {"uri": ds.uri, "product": ds.product.name, "metadata": ds.metadata_doc},
     )
 
 
 def doc2ds(
-    doc: Optional[Document], products: Dict[str, DatasetType]
+    doc: Optional[Document], products: Dict[str, Product]
 ) -> Optional[Dataset]:
     if doc is None:
         return None
@@ -51,30 +52,35 @@ def doc2ds(
     p = products.get(doc["product"], None)
     if p is None:
         raise ValueError(f"No product named: {doc['product']}")
-    return Dataset(p, doc["metadata"], uris=doc["uris"])
+    try:
+        return Dataset(p, doc["metadata"], uri=doc["uri"])
+    except KeyError:
+        return Dataset(p, doc["metadata"], uri=doc["uris"][0])
 
 
 def gs2doc(gs: GridSpec) -> base.Document:
     return {
         "crs": str(gs.crs),
-        "tile_size": list(gs.tile_size),
-        "resolution": list(gs.resolution),
-        "origin": list(gs.origin),
+        "tile_size": list(gs.tile_size.yx),  # do we want to change this to tile_shape?
+        "resolution": list(gs.resolution.yx),  # not sure whether we should maintain y,x order
+        "origin": list(gs.origin.yx),
     }
 
 
 def doc2gs(doc: Document) -> GridSpec:
+    res = resyx_(*tuple(doc["resolution"]))
+    tile_size = tuple(doc["tile_size"])
     return GridSpec(
         crs=CRS(doc["crs"]),
-        tile_size=tuple(doc["tile_size"]),  # type: ignore
-        resolution=tuple(doc["resolution"]),  # type: ignore
-        origin=tuple(doc["origin"]),  # type: ignore
+        tile_shape=to_tile_shape(tile_size, res),
+        resolution=res,
+        origin=yx_(*tuple(doc["origin"])),
     )
 
 
 def build_dc_product_map(
     metadata_json: Document, products_json: Document
-) -> Tuple[Dict[str, MetadataType], Dict[str, DatasetType]]:
+) -> Tuple[Dict[str, MetadataType], Dict[str, Product]]:
     mm = toolz.valmap(metadata_from_doc, metadata_json)
 
     def mk_product(doc, name):
@@ -86,13 +92,13 @@ def build_dc_product_map(
         if metadata is None:
             raise ValueError(f"No such metadata {mt} for product {name}")
 
-        return DatasetType(metadata, doc)
+        return Product(metadata, doc)
 
     return mm, {k: mk_product(doc, k) for k, doc in products_json.items()}
 
 
 def _metadata_from_products(
-    products: Dict[str, DatasetType],
+    products: Dict[str, Product],
 ) -> Dict[str, MetadataType]:
     mm = {}
     for p in products.values():
@@ -157,7 +163,7 @@ class DatasetCache:
 
     ds:
        uuid: compressed(json({product: str,
-                              uris: [str],
+                              uri: str,
                               metadata: object}))
     """
 
@@ -226,7 +232,7 @@ class DatasetCache:
         return self._db.groups(raw=raw, prefix=prefix)
 
     @property
-    def products(self) -> Dict[str, DatasetType]:
+    def products(self) -> Dict[str, Product]:
         return self._products
 
     @property
@@ -239,7 +245,7 @@ class DatasetCache:
             "metadata/", {metadata.name: metadata.definition}, transaction
         )
 
-    def _add_product(self, product: DatasetType, transaction: base.MaybeTransaction):
+    def _add_product(self, product: Product, transaction: base.MaybeTransaction):
         if product.metadata_type.name not in self._metadata:
             self._add_metadata(product.metadata_type, transaction)
 
@@ -249,8 +255,8 @@ class DatasetCache:
         )
 
     def _ds2doc(self, ds: Dataset) -> Tuple[UUID, Document]:
-        if ds.type.name not in self._products:
-            self._add_product(ds.type, self._db.current_transaction)
+        if ds.product.name not in self._products:
+            self._add_product(ds.product, self._db.current_transaction)
         return ds2doc(ds)
 
     def bulk_save(self, dss: Iterable[Dataset]):

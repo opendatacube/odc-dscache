@@ -10,7 +10,7 @@ dependencies:
   - python =3.10
 
   # odc-dscache dependencies
-  - datacube >=1.8.6
+  - datacube >=1.9
   - zstandard
   - toolz
   - click

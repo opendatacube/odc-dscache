@@ -1,7 +1,7 @@
 import datetime
 
 import pytest
-from datacube.utils import geometry as geom
+from odc.geo.geom import box as geom_box
 from odc.dscache.tools._index import (
     mid_longitude,
     month_range,
@@ -14,7 +14,7 @@ from odc.dscache.tools._index import (
 @pytest.mark.parametrize("lon,lat", [(0, 10), (100, -10), (-120, 30)])
 def test_mid_lon(lon, lat):
     r = 0.1
-    rect = geom.box(lon - r, lat - r, lon + r, lat + r, "epsg:4326")
+    rect = geom_box(lon - r, lat - r, lon + r, lat + r, "epsg:4326")
     assert rect.centroid.coords[0] == pytest.approx((lon, lat))
 
     assert mid_longitude(rect) == pytest.approx(lon)

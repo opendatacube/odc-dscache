@@ -3,10 +3,12 @@ from types import SimpleNamespace
 from typing import Dict, Optional, Tuple
 
 import toolz
-from datacube.model import Dataset, GridSpec
-from datacube.utils.geometry import CRS
+from datacube.model import Dataset
+from odc.geo import CRS, yx_
+from odc.geo.gridspec import GridSpec
 
 from .._text import parse_range_int, split_and_check
+from .._utils import to_tile_shape
 
 epsg3577 = CRS("epsg:3577")
 epsg6933 = CRS("epsg:6933")
@@ -21,52 +23,53 @@ epsg6933 = CRS("epsg:6933")
 #
 #  So AU tiles with index `y < 5 or x < 5` are outside of the valid range of EPSG:3577.
 #
+tile_shape_standard = to_tile_shape((96_000.0, 96_000.0), 96_000)
 GRIDS = {
     "albers_au_25": GridSpec(
-        crs=epsg3577, tile_size=(100_000.0, 100_000.0), resolution=(-25, 25)
+        crs=epsg3577, tile_shape=to_tile_shape((100_000.0, 100_000.0), 25), resolution=25
     ),
     "au": GridSpec(
         crs=epsg3577,
-        tile_size=(96_000.0, 96_000.0),
-        resolution=(-96_000, 96_000),
-        origin=(-5472000.0, -2688000.0),
+        tile_shape=tile_shape_standard,
+        resolution=96_000,
+        origin=yx_(-5472000.0, -2688000.0),
     ),
     **{
         f"au_{n}": GridSpec(
             crs=epsg3577,
-            tile_size=(96_000.0, 96_000.0),
-            resolution=(-n, n),
-            origin=(-5472000.0, -2688000.0),
+            tile_shape=to_tile_shape((96_000.0, 96_000.0), n),
+            resolution=n,
+            origin=yx_(-5472000.0, -2688000.0),
         )
         for n in (10, 20, 30, 60)
     },
     "au_extended": GridSpec(
         crs=epsg3577,
-        tile_size=(96_000.0, 96_000.0),
-        resolution=(-96_000, 96_000),
-        origin=(-6912000.0, -4416000.0),
+        tile_shape=tile_shape_standard,
+        resolution=96_000,
+        origin=yx_(-6912000.0, -4416000.0),
     ),
     **{
         f"au_extended_{n}": GridSpec(
             crs=epsg3577,
-            tile_size=(96_000.0, 96_000.0),
-            resolution=(-n, n),
-            origin=(-6912000.0, -4416000.0),
+            tile_shape=to_tile_shape((96_000.0, 96_000.0), n),
+            resolution=n,
+            origin=yx_(-6912000.0, -4416000.0),
         )
         for n in (10, 20, 30, 60)
     },
     "global": GridSpec(
         crs=epsg6933,
-        tile_size=(96_000.0, 96_000.0),
-        resolution=(-96_000, 96_000),
-        origin=(-7392000, -17376000),
+        tile_shape=tile_shape_standard,
+        resolution=96_000,
+        origin=yx_(-7392000, -17376000),
     ),
     **{
         f"global_{n}": GridSpec(
             crs=epsg6933,
-            tile_size=(96_000.0, 96_000.0),
-            resolution=(-n, n),
-            origin=(-7392000, -17376000),
+            tile_shape=to_tile_shape((96_000.0, 96_000.0), n),
+            resolution=n,
+            origin=yx_(-7392000, -17376000),
         )
         for n in (10, 20, 30, 60)
     },
@@ -98,9 +101,9 @@ def web_gs(zoom: int, tile_size: int = 256) -> GridSpec:
 
     return GridSpec(
         crs=CRS("epsg:3857"),
-        tile_size=(tsz, tsz),
-        resolution=(-res, res),  # Y,X
-        origin=(origin - tsz, -origin),
+        tile_shape=(tile_size, tile_size),
+        resolution=res,
+        origin=yx_(origin - tsz, -origin),
     )  # Y,X
 
 
@@ -172,10 +175,10 @@ def _parse_gridspec_string(s: str) -> GridSpec:
     try:
         if "x" in _res:
             r1, r2 = tuple(float(v) for v in split_and_check(_res, "x", 2))
-            res = (r1, r2)
+            res = yx_(r1, r2)
         else:
             tmp = float(_res)
-            res = (-tmp, tmp)
+            res = tmp
 
         if "x" in _shape:
             shape = parse_range_int(_shape, separator="x")
@@ -185,10 +188,10 @@ def _parse_gridspec_string(s: str) -> GridSpec:
     except ValueError:
         raise ValueError(f"Failed to parse gridspec: {s}") from None
 
-    t1, t2 = tuple(abs(n * res) for n, res in zip(res, shape))
-    tsz = (t1, t2)
+    # t1, t2 = tuple(abs(n * res) for n, res in zip(res, shape))
+    # tsz = (t1, t2)
 
-    return GridSpec(crs=CRS(crs), tile_size=tsz, resolution=res, origin=(0, 0))
+    return GridSpec(crs=CRS(crs), tile_shape=shape, resolution=res, origin=None)
 
 
 def _norm_gridspec_name(s: str) -> str:
@@ -244,6 +247,7 @@ def gridspec_from_crs(
     """
     if resolution is None:
         resolution = (-tile_size[0], tile_size[1])
+    resolution = yx_(*resolution)
 
     valid_region = crs.valid_region
     assert valid_region is not None
@@ -255,5 +259,6 @@ def gridspec_from_crs(
     y0_, x0_ = (
         float((idx - pad) * tsz) for (idx, pad, tsz) in zip((iy, ix), pad_yx, tile_size)
     )
+    tile_shape = to_tile_shape(tile_size, resolution)
 
-    return GridSpec(crs, tile_size, resolution=resolution, origin=(y0_, x0_))
+    return GridSpec(crs, tile_shape, resolution=resolution, origin=yx_(y0_, x0_))
