@@ -84,7 +84,7 @@ def db_connect(cfg=None):
       ODCConfig -- use loaded config object
     """
     if isinstance(cfg, str) or cfg is None:
-        cfg = ODCConfig(env=cfg)
+        cfg = ODCConfig.get_environment(env=cfg)
 
     cfg_remap = {
         "dbname": "db_database",

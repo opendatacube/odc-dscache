@@ -361,7 +361,7 @@ class DatasetCache:
             lock=lock,
             subdir=subdir,
             truncate=truncate,
-            **kw,
+            **kw
         )
 
     @staticmethod
@@ -428,7 +428,7 @@ def create_cache(
     truncate: bool = False,
     lock: bool = False,
     subdir: bool = False,
-    **kw,
+    **kw
 ) -> DatasetCache:
     """Create new file database or open existing one.
 

@@ -428,7 +428,7 @@ class JsonBlobCache:
         lock: bool = False,
         subdir: bool = False,
         truncate: bool = False,
-        **kw,
+        **kw
     ) -> "JsonBlobCache":
         """Create new file database or open existing one.
 
@@ -646,7 +646,7 @@ def create_cache(
     truncate: bool = False,
     lock: bool = False,
     subdir: bool = False,
-    **kw,
+    **kw
 ) -> JsonBlobCache:
     """Create new file database or open existing one.
 
