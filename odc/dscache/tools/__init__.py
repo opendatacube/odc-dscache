@@ -6,6 +6,7 @@ import random
 from typing import Any
 
 import psycopg2
+
 # from datacube import Datacube
 # from datacube.api.grid_workflow import Tile
 from datacube.cfg import ODCConfig
@@ -176,7 +177,9 @@ and dataset_type_ref = (select id from agdc.dataset_type where name = %(product)
 
 def gs_albers():
     return GridSpec(
-        crs=CRS("EPSG:3577"), tile_shape=to_tile_shape((100000.0, 100000.0), 25), resolution=25
+        crs=CRS("EPSG:3577"),
+        tile_shape=to_tile_shape((100000.0, 100000.0), 25),
+        resolution=25,
     )
 
 

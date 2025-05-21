@@ -28,7 +28,9 @@ tile_shape_standard = to_tile_shape((96_000.0, 96_000.0), 96_000)
 
 GRIDS = {
     "albers_au_25": GridSpec(
-        crs=epsg3577, tile_shape=to_tile_shape((100_000.0, 100_000.0), 25), resolution=25
+        crs=epsg3577,
+        tile_shape=to_tile_shape((100_000.0, 100_000.0), 25),
+        resolution=25,
     ),
     "au": GridSpec(
         crs=epsg3577,
@@ -176,7 +178,10 @@ def _parse_gridspec_string(s: str) -> GridSpec:
     crs, _res, _shape = split_and_check(s, ";", 3)
     try:
         if "x" in _res:
-            res_tup = cast(tuple[float, float], tuple(float(v) for v in split_and_check(_res, "x", 2)))
+            res_tup = cast(
+                tuple[float, float],
+                tuple(float(v) for v in split_and_check(_res, "x", 2)),
+            )
             res = resyx_(*res_tup)
         else:
             res = Resolution(float(_res))

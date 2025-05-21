@@ -1,11 +1,5 @@
 from pathlib import Path
-from typing import (
-    Collection,
-    Iterable,
-    Iterator,
-    TypeAlias,
-    cast
-)
+from typing import Collection, Iterable, Iterator, TypeAlias, cast
 from uuid import UUID
 
 import toolz
@@ -37,9 +31,7 @@ def ds2doc(ds) -> tuple[UUID, Document]:
     )
 
 
-def doc2ds(
-    doc: Document | None, products: dict[str, Product]
-) -> Dataset | None:
+def doc2ds(doc: Document | None, products: dict[str, Product]) -> Dataset | None:
     if doc is None:
         return None
 
@@ -56,7 +48,9 @@ def gs2doc(gs: GridSpec) -> base.Document:
     return {
         "crs": str(gs.crs),
         "tile_size": list(gs.tile_size.yx),  # do we want to change this to tile_shape?
-        "resolution": list(gs.resolution.yx),  # not sure whether we should maintain y,x order
+        "resolution": list(
+            gs.resolution.yx
+        ),  # not sure whether we should maintain y,x order
         "origin": list(gs.origin.yx),
     }
 

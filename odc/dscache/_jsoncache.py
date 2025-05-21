@@ -6,13 +6,7 @@ import json
 import operator
 from pathlib import Path
 from types import SimpleNamespace
-from typing import (
-    Any,
-    Collection,
-    Iterable,
-    Iterator,
-    TypeAlias
-)
+from typing import Any, Collection, Iterable, Iterator, TypeAlias
 from uuid import UUID
 
 import lmdb
