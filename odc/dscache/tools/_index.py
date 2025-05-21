@@ -53,7 +53,7 @@ def count_by_month(index, product, year):
     )
 
 
-def time_range(begin, end, freq="m"):
+def time_range(begin, end, freq="M"):
     """
     Return tuples of datetime objects aligned to boundaries of requested period.
 
