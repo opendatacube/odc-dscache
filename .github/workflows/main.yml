@@ -63,7 +63,7 @@ jobs:
         path: /tmp/test_env
         key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
 
-    - uses: conda-incubator/setup-miniconda@v2
+    - uses: conda-incubator/setup-miniconda@v3
       if: steps.conda_cache.outputs.cache-hit != 'true'
       with:
         channels: conda-forge,defaults
