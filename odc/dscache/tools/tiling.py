@@ -1,10 +1,11 @@
 from math import floor, pi
 from types import SimpleNamespace
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, cast
 
 import toolz
 from datacube.model import Dataset
-from odc.geo import CRS, yx_
+from odc.geo import CRS, yx_, resyx_
+from odc.geo.types import Resolution
 from odc.geo.gridspec import GridSpec
 
 from .._text import parse_range_int, split_and_check
@@ -24,6 +25,7 @@ epsg6933 = CRS("epsg:6933")
 #  So AU tiles with index `y < 5 or x < 5` are outside of the valid range of EPSG:3577.
 #
 tile_shape_standard = to_tile_shape((96_000.0, 96_000.0), 96_000)
+
 GRIDS = {
     "albers_au_25": GridSpec(
         crs=epsg3577, tile_shape=to_tile_shape((100_000.0, 100_000.0), 25), resolution=25
@@ -174,11 +176,10 @@ def _parse_gridspec_string(s: str) -> GridSpec:
     crs, _res, _shape = split_and_check(s, ";", 3)
     try:
         if "x" in _res:
-            r1, r2 = tuple(float(v) for v in split_and_check(_res, "x", 2))
-            res = yx_(r1, r2)
+            res_tup = cast(tuple[float, float], tuple(float(v) for v in split_and_check(_res, "x", 2)))
+            res = resyx_(*res_tup)
         else:
-            tmp = float(_res)
-            res = tmp
+            res = Resolution(float(_res))
 
         if "x" in _shape:
             shape = parse_range_int(_shape, separator="x")
@@ -247,7 +248,7 @@ def gridspec_from_crs(
     """
     if resolution is None:
         resolution = (-tile_size[0], tile_size[1])
-    resolution = yx_(*resolution)
+    resolution = resyx_(*resolution)
 
     valid_region = crs.valid_region
     assert valid_region is not None

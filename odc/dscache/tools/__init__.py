@@ -235,7 +235,8 @@ def grid_tiles_to_geojson(
     if gs is None:
         raise ValueError(f"No such grid: {grid}")
 
-    resolution = abs(gs.tile_size[0]) / 4  # up to 4 points per side
+    # Previously used the y of the tile size, but I don't think it makes a difference
+    resolution = abs(gs.tile_size.x) / 4  # up to 4 points per side
 
     def mk_feature(tidx: TileIdx, count: int) -> Dict[str, Any]:
         if len(tidx) == 3:
