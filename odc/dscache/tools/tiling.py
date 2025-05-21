@@ -1,6 +1,6 @@
 from math import floor, pi
 from types import SimpleNamespace
-from typing import Dict, Optional, Tuple, cast
+from typing import cast
 
 import toolz
 from datacube.model import Dataset
@@ -111,7 +111,7 @@ def web_gs(zoom: int, tile_size: int = 256) -> GridSpec:
 
 def extract_native_albers_tile(
     ds: Dataset, tile_size: float = 100_000.0
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     ll = toolz.get_in(
         "grid_spatial.projection.geo_ref_points.ll".split("."), ds.metadata_doc
     )
@@ -119,7 +119,7 @@ def extract_native_albers_tile(
     return (int(ll["x"] / tile_size), int(ll["y"] / tile_size))
 
 
-def extract_ls_path_row(ds: Dataset) -> Optional[Tuple[int, int]]:
+def extract_ls_path_row(ds: Dataset) -> tuple[int, int] | None:
     full_id = ds.metadata_doc.get("tile_id")
 
     if full_id is None:
@@ -199,7 +199,7 @@ def _norm_gridspec_name(s: str) -> str:
     return s.replace("-", "_")
 
 
-def parse_gridspec(s: str, grids: Optional[Dict[str, GridSpec]] = None) -> GridSpec:
+def parse_gridspec(s: str, grids: dict[str, GridSpec] | None = None) -> GridSpec:
     """
     "africa_10"
     "epsg:6936;10;9600"
@@ -216,8 +216,8 @@ def parse_gridspec(s: str, grids: Optional[Dict[str, GridSpec]] = None) -> GridS
 
 
 def parse_gridspec_with_name(
-    s: str, grids: Optional[Dict[str, GridSpec]] = None
-) -> Tuple[str, GridSpec]:
+    s: str, grids: dict[str, GridSpec] | None = None
+) -> tuple[str, GridSpec]:
     if grids is None:
         grids = GRIDS
 
@@ -232,9 +232,9 @@ def parse_gridspec_with_name(
 
 def gridspec_from_crs(
     crs: CRS,
-    tile_size: Tuple[float, float] = (96_000, 96_000),
-    pad_yx: Tuple[int, int] = (0, 0),
-    resolution: Optional[Tuple[float, float]] = None,
+    tile_size: tuple[float, float] = (96_000, 96_000),
+    pad_yx: tuple[int, int] = (0, 0),
+    resolution: tuple[float, float] | None = None,
 ):
     """
     Compute GridSpec such that there are no negative tiles overlapping with the

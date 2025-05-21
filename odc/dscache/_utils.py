@@ -1,6 +1,6 @@
 """Utils for compatibility with odc-geo"""
 
-from odc.geo.types import XY, xy_, res_, SomeResolution, Resolution
+from odc.geo.types import XY, xy_, res_, SomeResolution
 
 
 def to_tile_shape(tile_size: tuple, sres: SomeResolution) -> XY:

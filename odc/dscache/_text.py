@@ -1,9 +1,6 @@
-from typing import Tuple, Union
-
-
 def split_and_check(
-    s: str, separator: str, n: Union[int, Tuple[int, ...]]
-) -> Tuple[str, ...]:
+    s: str, separator: str, n: int | tuple[int, ...]
+) -> tuple[str, ...]:
     """Turn string into tuple, checking that there are exactly as many parts as expected.
     :param s: String to parse
     :param separator: Separator character
@@ -19,7 +16,7 @@ def split_and_check(
     return tuple(parts)
 
 
-def parse_range_int(s: str, separator: str = ":") -> Tuple[int, int]:
+def parse_range_int(s: str, separator: str = ":") -> tuple[int, int]:
     """Parse str(<int>:<int>) -> (int, int)"""
     try:
         _in, _out = (int(x) for x in split_and_check(s, separator, 2))

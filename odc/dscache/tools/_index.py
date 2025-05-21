@@ -4,7 +4,7 @@ import datetime
 from datetime import timedelta
 from random import randint
 from types import SimpleNamespace
-from typing import Iterator, Optional, Set, Tuple
+from typing import Iterator
 from uuid import UUID
 from warnings import warn
 
@@ -76,7 +76,7 @@ def time_range(begin, end, freq="M"):
 
 def month_range(
     year: int, month: int, n: int
-) -> Tuple[datetime.datetime, datetime.datetime]:
+) -> tuple[datetime.datetime, datetime.datetime]:
     """
     Construct month aligned time range.
 
@@ -101,7 +101,7 @@ def month_range(
     )
 
 
-def season_range(year: int, season: str) -> Tuple[datetime.datetime, datetime.datetime]:
+def season_range(year: int, season: str) -> tuple[datetime.datetime, datetime.datetime]:
     """
     Season is one of djf, mam, jja, son.
 
@@ -150,7 +150,7 @@ def ordered_dss(dc: Datacube, freq: str = "m", key=None, **query):
     if key is None:
         key = lambda ds: ds.center_time
 
-    _last_uuids: Set[UUID] = set()
+    _last_uuids: set[UUID] = set()
 
     for q in chop_query_by_time(qq, freq=freq):
         _dss = dc.find_datasets(**q.search_terms)
@@ -168,7 +168,7 @@ def chopped_dss(dc: Datacube, freq: str = "m", **query):
     periods)
     """
     qq = Query(**query)
-    _last_uuids: Set[UUID] = set()
+    _last_uuids: set[UUID] = set()
 
     for q in chop_query_by_time(qq, freq=freq):
         _dss = dc.find_datasets(**q.search_terms)
@@ -252,7 +252,7 @@ def bin_dataset_stream2(gridspec, dss, geobox_cache=None):
 
 
 def all_datasets(
-    dc: Datacube, product: str, read_chunk: int = 1000, limit: Optional[int] = None
+    dc: Datacube, product: str, read_chunk: int = 1000, limit: int | None = None
 ):
     """
     Properly lazy version of ``dc.find_datasets_lazy(product=product)``.

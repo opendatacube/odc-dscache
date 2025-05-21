@@ -3,7 +3,7 @@ Tools for dealing with datacube db
 """
 
 import random
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import psycopg2
 # from datacube import Datacube
@@ -211,9 +211,9 @@ def gs_albers():
 def grid_tiles_to_geojson(
     cache: DatasetCache,
     grid: str,
-    style: Optional[Dict[str, Any]] = None,
+    style: dict[str, Any] | None = None,
     wrapdateline: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Render tiles of a given grid to GeoJSON.
 
@@ -238,11 +238,11 @@ def grid_tiles_to_geojson(
     # Previously used the y of the tile size, but I don't think it makes a difference
     resolution = abs(gs.tile_size.x) / 4  # up to 4 points per side
 
-    def mk_feature(tidx: TileIdx, count: int) -> Dict[str, Any]:
+    def mk_feature(tidx: TileIdx, count: int) -> dict[str, Any]:
         if len(tidx) == 3:
-            _xy: Tuple[int, int] = tidx[1:]  # type: ignore
+            _xy: tuple[int, int] = tidx[1:]  # type: ignore
         else:
-            _xy: Tuple[int, int] = tidx  # type: ignore
+            _xy: tuple[int, int] = tidx  # type: ignore
 
         return {
             "type": "Feature",
