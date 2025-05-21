@@ -78,7 +78,7 @@ jobs:
       run: |
           conda info
           conda list
-          mamba -V
+          conda -V
           conda config --show-sources
           conda config --show
           printenv | sort
