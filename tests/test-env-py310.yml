@@ -36,8 +36,7 @@ dependencies:
   - isort
   - pyupgrade
   - libcst
-  - mypy
-  - pylint
+  - mypy >=1.15
 
   - pip
   - pip:
