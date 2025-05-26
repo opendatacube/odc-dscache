@@ -3,7 +3,9 @@ name: Publish to PyPI
 on:
   workflow_run:
     workflows: ["Run Code Checks"]
-    branches: [develop]
+    branches:
+      - develop
+      - develop-1.8
     types:
       - completed
 

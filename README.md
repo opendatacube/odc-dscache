@@ -10,6 +10,8 @@ Random access cache of `Dataset` objects backed by disk storage.
 - Keeps track of `Product` and `Metadata` objects
 - Has concept of "groups" (used for `GridWorkFlow`)
 
+Note: This branch is a legacy branch for datacube 1.8-compatible releases.
+
 
 ## Installation
 
