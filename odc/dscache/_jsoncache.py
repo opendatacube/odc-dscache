@@ -6,17 +6,7 @@ import json
 import operator
 from pathlib import Path
 from types import SimpleNamespace
-from typing import (
-    Any,
-    Collection,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Any, Collection, Iterable, Iterator, TypeAlias
 from uuid import UUID
 
 import lmdb
@@ -28,11 +18,11 @@ import zstandard
 FORMAT_VERSION = b"0001"
 RESERVED_INFO_KEYS = {"version", "zdict"}
 
-Prefix = Union[str, bytes]
-LaxUUID = Union[str, UUID]
-Document = Dict[str, Any]
-Document_ = Union[Document, Tuple[Union[str, UUID], Document]]
-MaybeTransaction = Optional[lmdb.Transaction]
+Prefix = str | bytes
+LaxUUID = str | UUID
+Document = dict[str, Any]
+Document_ = Document | tuple[LaxUUID, Document]
+MaybeTransaction: TypeAlias = lmdb.Transaction | None
 
 
 def key_to_bytes(k: Any) -> bytes:
@@ -61,14 +51,14 @@ def uuids2bytes(uu: Collection[UUID]) -> bytes:
     return bytes(bb)
 
 
-def bytes2uuids(bb: bytes) -> List[UUID]:
+def bytes2uuids(bb: bytes) -> list[UUID]:
     n = len(bb) // 16
     return [UUID(bytes=bb[i * 16 : (i + 1) * 16]) for i in range(n)]
 
 
 def prefix_visit(
     tr: lmdb.Transaction, prefix: Prefix, full_key: bool = False, db=None
-) -> Iterator[Tuple[bytes, bytes]]:
+) -> Iterator[tuple[bytes, bytes]]:
     if isinstance(prefix, str):
         prefix = prefix.encode("utf8")
 
@@ -83,9 +73,9 @@ def prefix_visit(
 
 def dict2jsonKV(
     oo: Document,
-    prefix: Optional[str] = None,
-    compressor: Optional[zstandard.ZstdCompressor] = None,
-) -> Iterator[Tuple[bytes, bytes]]:
+    prefix: str | None = None,
+    compressor: zstandard.ZstdCompressor | None = None,
+) -> Iterator[tuple[bytes, bytes]]:
     for k, doc in oo.items():
         data = json.dumps(doc, separators=(",", ":")).encode("utf8")
         if compressor is not None:
@@ -97,8 +87,8 @@ def dict2jsonKV(
 
 
 def jsonKV2dict(
-    kv: Iterable[Tuple[bytes, bytes]],
-    decompressor: Optional[zstandard.ZstdDecompressor] = None,
+    kv: Iterable[tuple[bytes, bytes]],
+    decompressor: zstandard.ZstdDecompressor | None = None,
 ) -> Document:
     def decode(kv):
         k, doc = kv
@@ -112,7 +102,7 @@ def jsonKV2dict(
     return doc
 
 
-def doc2bytes(doc: Document_, purge_id: bool = False) -> Tuple[bytes, bytes]:
+def doc2bytes(doc: Document_, purge_id: bool = False) -> tuple[bytes, bytes]:
     """doc is
 
     Either:
@@ -159,11 +149,11 @@ class JsonBlobCache:
        uuid: compressed(json({..}))
     """
 
-    def __init__(self, state):
+    def __init__(self, state: SimpleNamespace) -> None:
         """Don't use this directly, use create_cache or open_(rw|ro)."""
 
         self._dbs = state.dbs
-        self._comp: Optional[zstandard.ZstdCompressor] = state.comp
+        self._comp: zstandard.ZstdCompressor | None = state.comp
         self._decomp: zstandard.ZstdDecompressor = state.decomp
         self._closed = False
         self._current_transaction: MaybeTransaction = None
@@ -185,7 +175,7 @@ class JsonBlobCache:
     @staticmethod
     def train_dictionary(
         docs: Iterable[Document_], dict_sz: int = 8 * 1024
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """Given a finite sequence of Documents train zstandard compression dictionary of a given size.
 
         Document is either a
@@ -273,7 +263,7 @@ class JsonBlobCache:
     def readonly(self) -> bool:
         return self._comp is None
 
-    def _doc2kv(self, doc: Document_) -> Tuple[bytes, bytes]:
+    def _doc2kv(self, doc: Document_) -> tuple[bytes, bytes]:
         k, d = doc2bytes(doc)
         if self._comp:
             d = self._comp.compress(d)
@@ -332,14 +322,14 @@ class JsonBlobCache:
         with self._dbs.main.begin(self._dbs.groups, write=False) as tr:
             return tr.get(k)
 
-    def get_group(self, name: str) -> Optional[List[UUID]]:
+    def get_group(self, name: str) -> list[UUID] | None:
         """Group is a named list of uuids"""
         data = self._get_group_raw(key_to_bytes(name))
         return bytes2uuids(data) if data is not None else None
 
     def groups(
-        self, raw: bool = False, prefix: Optional[Prefix] = None
-    ) -> Union[List[Tuple[bytes, int]], List[Tuple[str, int]]]:
+        self, raw: bool = False, prefix: Prefix | None = None
+    ) -> list[tuple[bytes, int]] | list[tuple[str, int]]:
         """Get list of tuples (group_name, group_size).
 
         :raw bool: Normally names are returned as strings, supplying raw=True
@@ -372,7 +362,7 @@ class JsonBlobCache:
         d = self._decomp.decompress(d)
         return json.loads(d)
 
-    def get(self, uuid: LaxUUID) -> Optional[Document]:
+    def get(self, uuid: LaxUUID) -> Document | None:
         """Extract single dataset with a given uuid, or return None if not found"""
         if isinstance(uuid, str):
             uuid = UUID(uuid)
@@ -386,7 +376,7 @@ class JsonBlobCache:
 
             return self._extract_ds(d)
 
-    def get_all(self) -> Iterator[Tuple[UUID, Document]]:
+    def get_all(self) -> Iterator[tuple[UUID, Document]]:
         try:
             with self._dbs.main.begin(self._dbs.ds, buffers=True) as tr:
                 self._current_transaction = tr
@@ -395,7 +385,7 @@ class JsonBlobCache:
         finally:
             self._current_transaction = None
 
-    def stream_group(self, group_name: str) -> Iterator[Tuple[UUID, Document]]:
+    def stream_group(self, group_name: str) -> Iterator[tuple[UUID, Document]]:
         uu = self._get_group_raw(group_name)
         if uu is None:
             raise ValueError(f"No such group: {group_name}")
@@ -433,8 +423,8 @@ class JsonBlobCache:
     def create(
         path: str,
         complevel: int = 6,
-        zdict: Optional[bytes] = None,
-        max_db_sz: Optional[int] = None,
+        zdict: bytes | None = None,
+        max_db_sz: int | None = None,
         lock: bool = False,
         subdir: bool = False,
         truncate: bool = False,
@@ -540,7 +530,7 @@ def _from_existing_db(db, complevel: int = 6) -> JsonBlobCache:
         udata=db.open_db(b"udata", create=False),
     )
 
-    comp_params: Dict[str, Any] = (
+    comp_params: dict[str, Any] = (
         {"dict_data": zstandard.ZstdCompressionDict(zdict)} if zdict else {}
     )
 
@@ -554,7 +544,7 @@ def _from_existing_db(db, complevel: int = 6) -> JsonBlobCache:
     return JsonBlobCache(state)
 
 
-def _from_empty_db(db, complevel: int = 6, zdict: Optional[bytes] = None):
+def _from_empty_db(db, complevel: int = 6, zdict: bytes | None = None):
     assert isinstance(zdict, (bytes, type(None)))
 
     db_info = db.open_db(b"info", create=True)
@@ -573,7 +563,7 @@ def _from_empty_db(db, complevel: int = 6, zdict: Optional[bytes] = None):
         udata=db.open_db(b"udata", create=True),
     )
 
-    comp_params: Dict[str, Any] = (
+    comp_params: dict[str, Any] = (
         {"dict_data": zstandard.ZstdCompressionDict(zdict)} if zdict else {}
     )
 
@@ -609,7 +599,7 @@ def open_ro(path: str, lock: bool = False, **kw) -> JsonBlobCache:
 
 def open_rw(
     path: str,
-    max_db_sz: Optional[int] = None,
+    max_db_sz: int | None = None,
     complevel: int = 6,
     lock: bool = False,
     **kw,
@@ -651,8 +641,8 @@ def open_rw(
 def create_cache(
     path: str,
     complevel: int = 6,
-    zdict: Optional[bytes] = None,
-    max_db_sz: Optional[int] = None,
+    zdict: bytes | None = None,
+    max_db_sz: int | None = None,
     truncate: bool = False,
     lock: bool = False,
     subdir: bool = False,

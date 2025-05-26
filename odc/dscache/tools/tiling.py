@@ -1,12 +1,15 @@
 from math import floor, pi
 from types import SimpleNamespace
-from typing import Dict, Optional, Tuple
+from typing import cast
 
 import toolz
-from datacube.model import Dataset, GridSpec
-from datacube.utils.geometry import CRS
+from datacube.model import Dataset
+from odc.geo import CRS, yx_, resyx_
+from odc.geo.types import Resolution
+from odc.geo.gridspec import GridSpec
 
 from .._text import parse_range_int, split_and_check
+from .._utils import to_tile_shape
 
 epsg3577 = CRS("epsg:3577")
 epsg6933 = CRS("epsg:6933")
@@ -21,52 +24,56 @@ epsg6933 = CRS("epsg:6933")
 #
 #  So AU tiles with index `y < 5 or x < 5` are outside of the valid range of EPSG:3577.
 #
+tile_shape_standard = to_tile_shape((96_000.0, 96_000.0), 96_000)
+
 GRIDS = {
     "albers_au_25": GridSpec(
-        crs=epsg3577, tile_size=(100_000.0, 100_000.0), resolution=(-25, 25)
+        crs=epsg3577,
+        tile_shape=to_tile_shape((100_000.0, 100_000.0), 25),
+        resolution=25,
     ),
     "au": GridSpec(
         crs=epsg3577,
-        tile_size=(96_000.0, 96_000.0),
-        resolution=(-96_000, 96_000),
-        origin=(-5472000.0, -2688000.0),
+        tile_shape=tile_shape_standard,
+        resolution=96_000,
+        origin=yx_(-5472000.0, -2688000.0),
     ),
     **{
         f"au_{n}": GridSpec(
             crs=epsg3577,
-            tile_size=(96_000.0, 96_000.0),
-            resolution=(-n, n),
-            origin=(-5472000.0, -2688000.0),
+            tile_shape=to_tile_shape((96_000.0, 96_000.0), n),
+            resolution=n,
+            origin=yx_(-5472000.0, -2688000.0),
         )
         for n in (10, 20, 30, 60)
     },
     "au_extended": GridSpec(
         crs=epsg3577,
-        tile_size=(96_000.0, 96_000.0),
-        resolution=(-96_000, 96_000),
-        origin=(-6912000.0, -4416000.0),
+        tile_shape=tile_shape_standard,
+        resolution=96_000,
+        origin=yx_(-6912000.0, -4416000.0),
     ),
     **{
         f"au_extended_{n}": GridSpec(
             crs=epsg3577,
-            tile_size=(96_000.0, 96_000.0),
-            resolution=(-n, n),
-            origin=(-6912000.0, -4416000.0),
+            tile_shape=to_tile_shape((96_000.0, 96_000.0), n),
+            resolution=n,
+            origin=yx_(-6912000.0, -4416000.0),
         )
         for n in (10, 20, 30, 60)
     },
     "global": GridSpec(
         crs=epsg6933,
-        tile_size=(96_000.0, 96_000.0),
-        resolution=(-96_000, 96_000),
-        origin=(-7392000, -17376000),
+        tile_shape=tile_shape_standard,
+        resolution=96_000,
+        origin=yx_(-7392000, -17376000),
     ),
     **{
         f"global_{n}": GridSpec(
             crs=epsg6933,
-            tile_size=(96_000.0, 96_000.0),
-            resolution=(-n, n),
-            origin=(-7392000, -17376000),
+            tile_shape=to_tile_shape((96_000.0, 96_000.0), n),
+            resolution=n,
+            origin=yx_(-7392000, -17376000),
         )
         for n in (10, 20, 30, 60)
     },
@@ -98,15 +105,15 @@ def web_gs(zoom: int, tile_size: int = 256) -> GridSpec:
 
     return GridSpec(
         crs=CRS("epsg:3857"),
-        tile_size=(tsz, tsz),
-        resolution=(-res, res),  # Y,X
-        origin=(origin - tsz, -origin),
+        tile_shape=(tile_size, tile_size),
+        resolution=res,
+        origin=yx_(origin - tsz, -origin),
     )  # Y,X
 
 
 def extract_native_albers_tile(
     ds: Dataset, tile_size: float = 100_000.0
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     ll = toolz.get_in(
         "grid_spatial.projection.geo_ref_points.ll".split("."), ds.metadata_doc
     )
@@ -114,7 +121,7 @@ def extract_native_albers_tile(
     return (int(ll["x"] / tile_size), int(ll["y"] / tile_size))
 
 
-def extract_ls_path_row(ds: Dataset) -> Optional[Tuple[int, int]]:
+def extract_ls_path_row(ds: Dataset) -> tuple[int, int] | None:
     full_id = ds.metadata_doc.get("tile_id")
 
     if full_id is None:
@@ -171,11 +178,13 @@ def _parse_gridspec_string(s: str) -> GridSpec:
     crs, _res, _shape = split_and_check(s, ";", 3)
     try:
         if "x" in _res:
-            r1, r2 = tuple(float(v) for v in split_and_check(_res, "x", 2))
-            res = (r1, r2)
+            res_tup = cast(
+                tuple[float, float],
+                tuple(float(v) for v in split_and_check(_res, "x", 2)),
+            )
+            res = resyx_(*res_tup)
         else:
-            tmp = float(_res)
-            res = (-tmp, tmp)
+            res = Resolution(float(_res))
 
         if "x" in _shape:
             shape = parse_range_int(_shape, separator="x")
@@ -185,17 +194,17 @@ def _parse_gridspec_string(s: str) -> GridSpec:
     except ValueError:
         raise ValueError(f"Failed to parse gridspec: {s}") from None
 
-    t1, t2 = tuple(abs(n * res) for n, res in zip(res, shape))
-    tsz = (t1, t2)
+    # t1, t2 = tuple(abs(n * res) for n, res in zip(res, shape))
+    # tsz = (t1, t2)
 
-    return GridSpec(crs=CRS(crs), tile_size=tsz, resolution=res, origin=(0, 0))
+    return GridSpec(crs=CRS(crs), tile_shape=shape, resolution=res, origin=None)
 
 
 def _norm_gridspec_name(s: str) -> str:
     return s.replace("-", "_")
 
 
-def parse_gridspec(s: str, grids: Optional[Dict[str, GridSpec]] = None) -> GridSpec:
+def parse_gridspec(s: str, grids: dict[str, GridSpec] | None = None) -> GridSpec:
     """
     "africa_10"
     "epsg:6936;10;9600"
@@ -212,8 +221,8 @@ def parse_gridspec(s: str, grids: Optional[Dict[str, GridSpec]] = None) -> GridS
 
 
 def parse_gridspec_with_name(
-    s: str, grids: Optional[Dict[str, GridSpec]] = None
-) -> Tuple[str, GridSpec]:
+    s: str, grids: dict[str, GridSpec] | None = None
+) -> tuple[str, GridSpec]:
     if grids is None:
         grids = GRIDS
 
@@ -228,9 +237,9 @@ def parse_gridspec_with_name(
 
 def gridspec_from_crs(
     crs: CRS,
-    tile_size: Tuple[float, float] = (96_000, 96_000),
-    pad_yx: Tuple[int, int] = (0, 0),
-    resolution: Optional[Tuple[float, float]] = None,
+    tile_size: tuple[float, float] = (96_000, 96_000),
+    pad_yx: tuple[int, int] = (0, 0),
+    resolution: tuple[float, float] | None = None,
 ):
     """
     Compute GridSpec such that there are no negative tiles overlapping with the
@@ -244,6 +253,7 @@ def gridspec_from_crs(
     """
     if resolution is None:
         resolution = (-tile_size[0], tile_size[1])
+    resolution = resyx_(*resolution)
 
     valid_region = crs.valid_region
     assert valid_region is not None
@@ -255,5 +265,6 @@ def gridspec_from_crs(
     y0_, x0_ = (
         float((idx - pad) * tsz) for (idx, pad, tsz) in zip((iy, ix), pad_yx, tile_size)
     )
+    tile_shape = to_tile_shape(tile_size, resolution)
 
-    return GridSpec(crs, tile_size, resolution=resolution, origin=(y0_, x0_))
+    return GridSpec(crs, tile_shape, resolution=resolution, origin=yx_(y0_, x0_))

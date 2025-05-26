@@ -55,7 +55,7 @@ def qmap(proc, q, eos_marker=None):
 @click.option("--year", type=int, help="Only extract datasets for a given year")
 @click.argument("output", type=str, nargs=1)
 @click.argument("products", type=str, nargs=-1)
-def cli(env, grid, year, output, products, complevel):
+def cli(env, complevel, grid, year, output, products):
     """Extract product(s) to an on disk cache.
 
     Optionally tile datasets into a grid while extracting (see --grid option)

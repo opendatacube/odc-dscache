@@ -1,80 +1,74 @@
 from pathlib import Path
-from typing import (
-    Collection,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Collection, Iterable, Iterator, TypeAlias, cast
 from uuid import UUID
 
 import toolz
 from datacube.model import (
     Dataset,
-    DatasetType,
-    GridSpec,
+    Product,
     MetadataType,
     metadata_from_doc,
 )
-from datacube.utils.geometry import CRS
+from odc.geo import CRS, resyx_, yx_
+from odc.geo.gridspec import GridSpec
 
 from . import _jsoncache as base
 from ._text import split_and_check
+from ._utils import to_tile_shape
 
 # pylint: disable=invalid-name,too-many-public-methods
 
-ProductCollection = Union[
-    Iterator[DatasetType], List[DatasetType], Dict[str, DatasetType]
-]
+ProductCollection: TypeAlias = Iterator[Product] | list[Product] | dict[str, Product]
 Document = base.Document
 LaxUUID = base.LaxUUID
-TileIdx = Union[Tuple[int, int], Tuple[str, int, int]]
+TileIdx: TypeAlias = tuple[int, int] | tuple[str, int, int]
 
 
-def ds2doc(ds) -> Tuple[UUID, Document]:
+def ds2doc(ds) -> tuple[UUID, Document]:
     return (
         ds.id,
-        {"uris": ds.uris, "product": ds.type.name, "metadata": ds.metadata_doc},
+        {"uri": ds.uri, "product": ds.product.name, "metadata": ds.metadata_doc},
     )
 
 
-def doc2ds(
-    doc: Optional[Document], products: Dict[str, DatasetType]
-) -> Optional[Dataset]:
+def doc2ds(doc: Document | None, products: dict[str, Product]) -> Dataset | None:
     if doc is None:
         return None
 
     p = products.get(doc["product"], None)
     if p is None:
         raise ValueError(f"No product named: {doc['product']}")
-    return Dataset(p, doc["metadata"], uris=doc["uris"])
+    try:
+        return Dataset(p, doc["metadata"], uri=doc["uri"])
+    except KeyError:
+        return Dataset(p, doc["metadata"], uri=doc["uris"][0])
 
 
 def gs2doc(gs: GridSpec) -> base.Document:
     return {
         "crs": str(gs.crs),
-        "tile_size": list(gs.tile_size),
-        "resolution": list(gs.resolution),
-        "origin": list(gs.origin),
+        "tile_size": list(gs.tile_size.yx),  # do we want to change this to tile_shape?
+        "resolution": list(
+            gs.resolution.yx
+        ),  # not sure whether we should maintain y,x order
+        "origin": list(gs.origin.yx),
     }
 
 
 def doc2gs(doc: Document) -> GridSpec:
+    res = resyx_(*tuple(doc["resolution"]))
+    tile_size = tuple(doc["tile_size"])
     return GridSpec(
         crs=CRS(doc["crs"]),
-        tile_size=tuple(doc["tile_size"]),  # type: ignore
-        resolution=tuple(doc["resolution"]),  # type: ignore
-        origin=tuple(doc["origin"]),  # type: ignore
+        tile_shape=to_tile_shape(tile_size, res),
+        resolution=res,
+        origin=yx_(*tuple(doc["origin"])),
     )
 
 
 def build_dc_product_map(
     metadata_json: Document, products_json: Document
-) -> Tuple[Dict[str, MetadataType], Dict[str, DatasetType]]:
+) -> tuple[dict[str, MetadataType], dict[str, Product]]:
     mm = toolz.valmap(metadata_from_doc, metadata_json)
 
     def mk_product(doc, name):
@@ -86,14 +80,14 @@ def build_dc_product_map(
         if metadata is None:
             raise ValueError(f"No such metadata {mt} for product {name}")
 
-        return DatasetType(metadata, doc)
+        return Product(metadata, doc)
 
     return mm, {k: mk_product(doc, k) for k, doc in products_json.items()}
 
 
 def _metadata_from_products(
-    products: Dict[str, DatasetType],
-) -> Dict[str, MetadataType]:
+    products: dict[str, Product],
+) -> dict[str, MetadataType]:
     mm = {}
     for p in products.values():
         m = p.metadata_type
@@ -113,7 +107,7 @@ def mk_group_name(idx: TileIdx, name: str = "unnamed_grid") -> str:
     raise ValueError("Expect index in (x, y) or (t, x, y) format")
 
 
-def parse_group_name(group_name: str) -> Tuple[TileIdx, str]:
+def parse_group_name(group_name: str) -> tuple[TileIdx, str]:
     """Return an
       ((int, int), prefix:str)       x,y
       ((str, int, int), prefix:str)  t,x,y
@@ -157,12 +151,12 @@ class DatasetCache:
 
     ds:
        uuid: compressed(json({product: str,
-                              uris: [str],
+                              uri: str,
                               metadata: object}))
     """
 
     def __init__(
-        self, db: base.JsonBlobCache, products: Optional[ProductCollection] = None
+        self, db: base.JsonBlobCache, products: ProductCollection | None = None
     ):
         """Don't use this directly, use create_cache or open_(rw|ro)."""
 
@@ -188,7 +182,7 @@ class DatasetCache:
         self._db.close()
 
     @staticmethod
-    def train_dictionary(dss: Iterator[Dataset], dict_sz=8 * 1024) -> Optional[bytes]:
+    def train_dictionary(dss: Iterator[Dataset], dict_sz=8 * 1024) -> bytes | None:
         """Given a finite sequence of Datasets train zstandard compression dictionary of a given size.
 
         Accepts both `Dataset` as well as "raw" datasets.
@@ -210,7 +204,7 @@ class DatasetCache:
         """Group is a named list of uuids"""
         self._db.put_group(name, uuids)
 
-    def get_group(self, name: str) -> Optional[List[UUID]]:
+    def get_group(self, name: str) -> list[UUID] | None:
         """Group is a named list of uuids"""
         return self._db.get_group(name)
 
@@ -226,11 +220,11 @@ class DatasetCache:
         return self._db.groups(raw=raw, prefix=prefix)
 
     @property
-    def products(self) -> Dict[str, DatasetType]:
+    def products(self) -> dict[str, Product]:
         return self._products
 
     @property
-    def metadata(self) -> Dict[str, MetadataType]:
+    def metadata(self) -> dict[str, MetadataType]:
         return self._metadata
 
     def _add_metadata(self, metadata: MetadataType, transaction: base.MaybeTransaction):
@@ -239,7 +233,7 @@ class DatasetCache:
             "metadata/", {metadata.name: metadata.definition}, transaction
         )
 
-    def _add_product(self, product: DatasetType, transaction: base.MaybeTransaction):
+    def _add_product(self, product: Product, transaction: base.MaybeTransaction):
         if product.metadata_type.name not in self._metadata:
             self._add_metadata(product.metadata_type, transaction)
 
@@ -248,9 +242,9 @@ class DatasetCache:
             "product/", {product.name: product.definition}, transaction
         )
 
-    def _ds2doc(self, ds: Dataset) -> Tuple[UUID, Document]:
-        if ds.type.name not in self._products:
-            self._add_product(ds.type, self._db.current_transaction)
+    def _ds2doc(self, ds: Dataset) -> tuple[UUID, Document]:
+        if ds.product.name not in self._products:
+            self._add_product(ds.product, self._db.current_transaction)
         return ds2doc(ds)
 
     def bulk_save(self, dss: Iterable[Dataset]):
@@ -269,7 +263,7 @@ class DatasetCache:
             dss, max_transaction_size=max_transaction_size, transform=self._ds2doc
         )
 
-    def get(self, uuid: LaxUUID) -> Optional[Dataset]:
+    def get(self, uuid: LaxUUID) -> Dataset | None:
         """Extract single dataset with a given uuid, or return None if not found"""
         return doc2ds(self._db.get(uuid), self._products)
 
@@ -286,7 +280,7 @@ class DatasetCache:
             yield ds
 
     @property
-    def grids(self) -> Dict[str, GridSpec]:
+    def grids(self) -> dict[str, GridSpec]:
         """Grids defined for this dataset cache"""
         return {
             key: doc2gs(value) for key, value in self._db.get_info_dict("grid/").items()
@@ -301,12 +295,12 @@ class DatasetCache:
         key = mk_group_name(idx, grid)
         self._db.put_group(key, uuids)
 
-    def add_grid_tiles(self, grid: str, tiles: Dict[TileIdx, List[UUID]]):
+    def add_grid_tiles(self, grid: str, tiles: dict[TileIdx, list[UUID]]):
         """Add multiple tiles to a grid"""
         for idx, uuids in tiles.items():
             self.add_grid_tile(grid, idx, uuids)
 
-    def tiles(self, grid: str) -> List[Tuple[TileIdx, int]]:
+    def tiles(self, grid: str) -> list[tuple[TileIdx, int]]:
         """Return tile indexes and dataset counts"""
 
         def tile_index(group_name):
@@ -352,8 +346,8 @@ class DatasetCache:
     def create(
         path: str,
         complevel: int = 6,
-        zdict: Optional[bytes] = None,
-        max_db_sz: Optional[int] = None,
+        zdict: bytes | None = None,
+        max_db_sz: int | None = None,
         lock: bool = False,
         subdir: bool = False,
         truncate: bool = False,
@@ -376,7 +370,7 @@ class DatasetCache:
 
 
 def open_ro(
-    path: str, products: Optional[ProductCollection] = None, lock: bool = False, **kw
+    path: str, products: ProductCollection | None = None, lock: bool = False, **kw
 ) -> DatasetCache:
     """Open existing database in readonly mode.
 
@@ -402,8 +396,8 @@ def open_ro(
 
 def open_rw(
     path: str,
-    products: Optional[ProductCollection] = None,
-    max_db_sz: Optional[int] = None,
+    products: ProductCollection | None = None,
+    max_db_sz: int | None = None,
     complevel: int = 6,
     lock: bool = False,
     **kw,
@@ -429,8 +423,8 @@ def open_rw(
 def create_cache(
     path: str,
     complevel: int = 6,
-    zdict: Optional[bytes] = None,
-    max_db_sz: Optional[int] = None,
+    zdict: bytes | None = None,
+    max_db_sz: int | None = None,
     truncate: bool = False,
     lock: bool = False,
     subdir: bool = False,

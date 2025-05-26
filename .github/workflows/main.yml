@@ -121,7 +121,7 @@ jobs:
        black --check .
 
 
-  run-pylint:
+  run-mypy:
     runs-on: ubuntu-latest
     needs:
       - build-test-env-base
@@ -140,40 +140,10 @@ jobs:
       run: |
         echo "/tmp/test_env/bin" >> $GITHUB_PATH
 
-    - name: Install in Edit mode
+    - name: Check with mypy
       shell: bash
       run: |
-        pip install -e . --no-deps
-
-    - name: Check with pylint
-      shell: bash
-      run: |
-        pylint -v odc
-
-
-        # run-mypy:
-        #   runs-on: ubuntu-latest
-        #   needs:
-        #     - build-test-env-base
-
-        #   steps:
-        #   - uses: actions/checkout@v3
-        #   - name: Get Conda Environment from Cache
-        #     uses: actions/cache@v3
-        #     id: conda_cache
-        #     with:
-        #       path: /tmp/test_env
-        #       key: ${{ runner.os }}-test-env-py310-${{ hashFiles('tests/test-env-py310.yml') }}
-
-        #   - name: Update PATH
-        #     shell: bash
-        #     run: |
-        #       echo "/tmp/test_env/bin" >> $GITHUB_PATH
-
-        #   - name: Check with mypy
-        #     shell: bash
-        #     run: |
-        #       mypy -p odc.dscache
+        mypy --explicit-package-bases --python-version=3.10 odc
 
 
   test-with-coverage:
@@ -204,25 +174,9 @@ jobs:
       run: |
         pip install -e . --no-deps
 
-
-    - name: Start Test DB
-      shell: bash
-      run: |
-        echo "Launching test db"
-        pgdata=$(pwd)/.dbdata
-        initdb -D ${pgdata} --auth-host=md5 --encoding=UTF8
-        pg_ctl -D ${pgdata} -l "${pgdata}/pg.log" start
-        createdb datacube
-        datacube system init
-
-      env:
-        DATACUBE_DB_URL: postgresql:///datacube
-
     - name: Run Tests
       shell: bash
       run: |
-        datacube system check
-
         echo "Running Tests"
         pytest --cov=. \
         --cov-report=html \
@@ -231,9 +185,7 @@ jobs:
         tests
 
       env:
-        AWS_DEFAULT_REGION: us-west-2
         DASK_TEMPORARY_DIRECTORY: /tmp/dask
-        DATACUBE_DB_URL: postgresql:///datacube
 
     - name: Upload Coverage
       if: |
@@ -279,35 +231,14 @@ jobs:
       shell: bash
       run: |
         which python
-        which createdb
         which datacube
 
         ls -lh wheels/clean
         python -m pip install --no-deps wheels/clean/*whl
         python -m pip check || true
 
-    - name: Start Test DB
-      shell: bash
-      run: |
-        echo "Launching test db"
-        pgdata=$(pwd)/.dbdata
-        initdb -D ${pgdata} --auth-host=md5 --encoding=UTF8
-        pg_ctl -D ${pgdata} -l "${pgdata}/pg.log" start
-        createdb datacube
-        datacube system init
-
-      env:
-        DATACUBE_DB_URL: postgresql:///datacube
-
     - name: Run Tests
       shell: bash
       run: |
-        datacube system check
-
         echo "Running Tests"
         pytest --timeout=30 tests
-
-      env:
-        AWS_DEFAULT_REGION: us-west-2
-        DASK_TEMPORARY_DIRECTORY: /tmp/dask
-        DATACUBE_DB_URL: postgresql:///datacube
