@@ -55,7 +55,7 @@ GRIDS = {
         )
         for n in (10, 20, 30, 60)
     },
-     "au_extended_s2": GridSpec(
+    "au_extended_s2": GridSpec(
         crs=epsg3577,
         tile_size=(32000, 32000),
         resolution=(-32000, 32000),
