@@ -25,6 +25,7 @@ epsg6933 = CRS("epsg:6933")
 #  So AU tiles with index `y < 5 or x < 5` are outside of the valid range of EPSG:3577.
 #
 tile_shape_standard = to_tile_shape((96_000.0, 96_000.0), 96_000)
+tile_shape_standard_s2 = to_tile_shape((32_000.0, 32_000.0), 32_000)
 
 GRIDS = {
     "albers_au_25": GridSpec(
@@ -62,6 +63,21 @@ GRIDS = {
         )
         for n in (10, 20, 30, 60)
     },
+    "au_extended_s2": GridSpec(
+        crs=epsg3577,
+        tile_shape=tile_shape_standard_s2,
+        resolution=32_000,
+        origin=yx_(-6912000.0, -4416000.0),
+    ),
+    **{
+        f"au_extended_s2_{n}": GridSpec(
+            crs=epsg3577,
+            tile_shape=to_tile_shape((32_000.0, 32_000.0), n),
+            resolution=n,
+            origin=yx_(-6912000.0, -4416000.0),
+        )
+        for n in (10, 20, 40, 80)
+    },        
     "global": GridSpec(
         crs=epsg6933,
         tile_shape=tile_shape_standard,
