@@ -77,7 +77,7 @@ GRIDS = {
             origin=yx_(-6912000.0, -4416000.0),
         )
         for n in (10, 20, 40, 80)
-    },        
+    },
     "global": GridSpec(
         crs=epsg6933,
         tile_shape=tile_shape_standard,
