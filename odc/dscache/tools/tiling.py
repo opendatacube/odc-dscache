@@ -55,6 +55,21 @@ GRIDS = {
         )
         for n in (10, 20, 30, 60)
     },
+    "au_extended_s2": GridSpec(
+        crs=epsg3577,
+        tile_size=(32000, 32000),
+        resolution=(-32000, 32000),
+        origin=(-6912000.0, -4416000.0),
+    ),
+    **{
+        f"au_extended_s2_{n}": GridSpec(
+            crs=epsg3577,
+            tile_size=(32000, 32000),
+            resolution=(-n, n),
+            origin=(-6912000.0, -4416000.0),
+        )
+        for n in (10, 20)
+    },
     "global": GridSpec(
         crs=epsg6933,
         tile_size=(96_000.0, 96_000.0),
@@ -71,7 +86,6 @@ GRIDS = {
         for n in (10, 20, 30, 60)
     },
 }
-
 
 # Inject aliases for Africa
 GRIDS["africa"] = GRIDS["global"]
