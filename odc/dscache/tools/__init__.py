@@ -9,7 +9,7 @@ import datacube.utils.geometry as geom
 import psycopg2
 from datacube import Datacube
 from datacube.api.grid_workflow import Tile
-from datacube.config import LocalConfig
+from datacube.cfg import LocalConfig
 from datacube.model import Dataset, GridSpec
 
 from .. import DatasetCache, TileIdx
