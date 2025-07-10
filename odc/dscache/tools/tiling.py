@@ -68,7 +68,7 @@ GRIDS = {
             resolution=(-n, n),
             origin=(-6912000.0, -4416000.0),
         )
-        for n in (10, 20, 40, 80)
+        for n in (10, 20)
     },
     "global": GridSpec(
         crs=epsg6933,
