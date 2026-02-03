@@ -10,9 +10,7 @@ Total: {r.total:6.3f} sec
 TTFB : {r.ttfb:6.3f} sec
 .....: {r.uu:032X}
 ..
-""".format(
-        r=r, fps=r.count / r.total
-    ).strip()
+""".format(r=r, fps=r.count / r.total).strip()
 
 
 def ds_stream_test_func(dss, get_uuid=None):
