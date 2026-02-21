@@ -20,6 +20,7 @@ eggs/
 .eggs/
 lib/
 lib64/
+odc/dscache/_version.py
 parts/
 sdist/
 var/

@@ -1,5 +1,42 @@
+[project]
+name = "odc-dscache"
+dynamic = ["version"]
+description = "ODC Dataset File Cache"
+authors = [
+    {name = "Open Data Cube", email = "earth.observation@ga.gov.au"},
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = "Apache-2.0"
+dependencies = [
+    "click",
+    "datacube>=1.9,<1.10.0",
+    "lmdb",
+    "odc-geo",
+    "pandas",
+    "psycopg2",
+    "toolz",
+    "zstandard",
+]
+
+[project.urls]
+Homepage = "https://github.com/opendatacube/odc-dscache/"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[project.scripts]
+dstiler = "odc.dscache.apps.dstiler:cli"
+slurpy = "odc.dscache.apps.slurpy:cli"
+
+[tool.setuptools.packages.find]
+exclude = ["tests"]
+include = ["odc*"]
+
 [build-system]
-requires = ["setuptools>=51.0.0", "wheel"]
+requires = ["setuptools>=69", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [tool.mypy]
@@ -26,3 +63,7 @@ disable = [
   "fixme",
   "R0801",
 ]
+
+[tool.setuptools_scm]
+write_to = "odc/dscache/_version.py"
+fallback_version = "1.9.1.dev0"
