@@ -3,6 +3,18 @@ name: Run Code Checks
 on:
   pull_request:
   push:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+permissions: {}
+
+# When a PR is updated, cancel the jobs from the previous version. Merges
+# do not define head_ref, so use run_id to never cancel those jobs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-wheels:
@@ -165,6 +177,10 @@ jobs:
       - build-test-env-base
       - build-wheels
 
+    # Permit authenticating to PyPI.
+    permissions:
+      id-token: write
+
     steps:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -202,3 +218,16 @@ jobs:
       run: |
         echo "Running Tests"
         pytest --timeout=30 tests
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@e06108dd0aef18192324c70427afc47652e63a82 # v7.5.0
+
+    - name: Build Packages
+      run: |
+        uv build
+        uv tool run twine check --strict dist/*
+
+    # Uses to OIDC identification between GitHub and PyPI
+    - name: Upload package to PyPI on GitHub Release
+      if: "github.repository_owner == 'opendatacube' && github.event.action == 'published'"
+      uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
